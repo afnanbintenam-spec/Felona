@@ -1,0 +1,90 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:felo_na/core/constants/app_theme.dart';
+import 'package:felo_na/core/di/injection_container.dart' as di;
+
+// BLoCs
+import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_bloc.dart';
+import 'package:felo_na/features/pickup/presentation/bloc/pickup_bloc.dart';
+import 'package:felo_na/features/eco_score/presentation/bloc/eco_bloc.dart';
+import 'package:felo_na/features/notifications/presentation/bloc/notifications_bloc.dart';
+
+// Auth screens
+import 'package:felo_na/features/auth/presentation/pages/splash_screen.dart';
+import 'package:felo_na/features/auth/presentation/pages/onboarding_screen.dart';
+import 'package:felo_na/features/auth/presentation/pages/login_screen.dart';
+import 'package:felo_na/features/auth/presentation/pages/register_screen.dart';
+import 'package:felo_na/features/auth/presentation/pages/profile_screen.dart';
+
+// Marketplace screens
+import 'package:felo_na/features/marketplace/presentation/pages/main_screen.dart';
+import 'package:felo_na/features/marketplace/presentation/pages/dashboard_screen.dart';
+import 'package:felo_na/features/marketplace/presentation/pages/marketplace_screen.dart';
+import 'package:felo_na/features/marketplace/presentation/pages/create_listing_screen.dart';
+import 'package:felo_na/features/marketplace/presentation/pages/item_detail_screen.dart';
+
+// Pickup screens
+import 'package:felo_na/features/pickup/presentation/pages/next_collection_screen.dart';
+import 'package:felo_na/features/pickup/presentation/pages/sorting_guide_screen.dart';
+import 'package:felo_na/features/pickup/presentation/pages/create_pickup_screen.dart';
+
+// Eco Score screens
+import 'package:felo_na/features/eco_score/presentation/pages/eco_score_screen.dart';
+
+// Notification screens
+import 'package:felo_na/features/notifications/presentation/pages/notifications_screen.dart';
+
+/// Application entry point.
+///
+/// Initializes the dependency injection container before running the app.
+/// This ensures all services are registered and available throughout the app.
+void main() async {
+  // Ensure Flutter bindings are initialized before any async operations
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize dependency injection container
+  await di.initializeDependencies();
+
+  runApp(const FeloNaApp());
+}
+
+class FeloNaApp extends StatelessWidget {
+  const FeloNaApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => AuthBloc()),
+        BlocProvider(create: (context) => MarketplaceBloc()),
+        BlocProvider(create: (context) => PickupBloc()),
+        BlocProvider(create: (context) => EcoBloc()),
+        BlocProvider(create: (context) => NotificationsBloc()),
+      ],
+      child: MaterialApp(
+        title: 'FeloNa - Smart Waste Management',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme,
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const SplashScreen(),
+          '/onboarding': (context) => const OnboardingScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
+          '/main': (context) => const MainScreen(),
+          '/dashboard': (context) => const DashboardScreen(),
+          '/marketplace': (context) => const MarketplaceScreen(),
+          '/create-listing': (context) => const CreateListingScreen(),
+          '/item-detail': (context) => const ItemDetailScreen(),
+          '/next-collection': (context) => const NextCollectionScreen(),
+          '/sorting-guide': (context) => const SortingGuideScreen(),
+          '/create-pickup': (context) => const CreatePickupScreen(),
+          '/eco-score': (context) => const EcoScoreScreen(),
+          '/notifications': (context) => const NotificationsScreen(),
+          '/profile': (context) => const ProfileScreen(),
+        },
+      ),
+    );
+  }
+}
