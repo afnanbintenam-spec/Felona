@@ -102,9 +102,9 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: const Color(0xFF0A0A0A),
         foregroundColor: AppColors.gray900,
         elevation: 0,
         title: Text(

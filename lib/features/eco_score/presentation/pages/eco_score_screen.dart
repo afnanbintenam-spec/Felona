@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
@@ -9,15 +10,7 @@ import 'package:felo_na/features/eco_score/presentation/bloc/eco_event.dart';
 import 'package:felo_na/features/eco_score/presentation/bloc/eco_state.dart';
 import 'package:felo_na/features/eco_score/domain/entities/eco_stats.dart';
 
-/// Eco score screen showing environmental impact and gamification.
-///
-/// Features:
-/// - Total eco points display
-/// - Statistics (weight recycled, items sold, pickups)
-/// - Current badge and progress
-/// - Point history
-/// - Milestones
-/// - Streak tracking
+/// Eco Score Screen — Premium Dark Theme
 class EcoScoreScreen extends StatefulWidget {
   const EcoScoreScreen({super.key});
 
@@ -25,17 +18,30 @@ class EcoScoreScreen extends StatefulWidget {
   State<EcoScoreScreen> createState() => _EcoScoreScreenState();
 }
 
-class _EcoScoreScreenState extends State<EcoScoreScreen> {
+class _EcoScoreScreenState extends State<EcoScoreScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _glowController;
+
   @override
   void initState() {
     super.initState();
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
     context.read<EcoBloc>().add(const LoadEcoStatsRequested());
+  }
+
+  @override
+  void dispose() {
+    _glowController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: AppColors.background,
       body: BlocBuilder<EcoBloc, EcoState>(
         builder: (context, state) {
           if (state is EcoLoading) {
@@ -69,222 +75,219 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
       onRefresh: () async {
         context.read<EcoBloc>().add(const RefreshEcoStatsRequested());
       },
-      child: CustomScrollView(
-        slivers: [
-          // App Bar
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            backgroundColor: AppColors.primary500,
-            flexibleSpace: FlexibleSpaceBar(
-              background: _buildHeader(stats),
-            ),
-            title: const Text('Eco Score'),
-          ),
-
-          // Stats Cards
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Stats Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          '${stats.totalWeightRecycled.toStringAsFixed(1)} kg',
-                          'Recycled',
-                          Icons.recycling,
-                          AppColors.success,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          '${stats.itemsSold}',
-                          'Items Sold',
-                          Icons.sell,
-                          AppColors.accent500,
-                        ),
-                      ),
-                    ],
+      color: AppColors.accentGreen,
+      backgroundColor: AppColors.cardDark,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Text(
+                  'Eco Score',
+                  style: AppTextStyles.headlineLarge.copyWith(
+                    color: AppColors.textPrimary,
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          '${stats.pickupsCompleted}',
-                          'Pickups',
-                          Icons.local_shipping,
-                          AppColors.secondary500,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          '${stats.co2Reduced.toStringAsFixed(1)} kg',
-                          'CO₂ Reduced',
-                          Icons.cloud_outlined,
-                          AppColors.info,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                ),
+                const SizedBox(height: 24),
 
-                  // Streak Card
-                  _buildStreakCard(stats),
-                  const SizedBox(height: 24),
+                // Hero Score Card
+                _buildHeroScoreCard(stats),
+                const SizedBox(height: 24),
 
-                  // Milestones
-                  Text(
-                    'Milestones',
-                    style: AppTextStyles.headlineMedium.copyWith(
-                      color: AppColors.gray900,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...stats.milestones.map((milestone) => _buildMilestoneCard(milestone)),
-                  const SizedBox(height: 24),
+                // Stats Grid
+                _buildStatsGrid(stats),
+                const SizedBox(height: 24),
 
-                  // Point History
-                  Text(
-                    'Point History',
-                    style: AppTextStyles.headlineMedium.copyWith(
-                      color: AppColors.gray900,
-                    ),
+                // Streak Card
+                _buildStreakCard(stats),
+                const SizedBox(height: 32),
+
+                // Milestones
+                Text(
+                  'Milestones',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    color: AppColors.textPrimary,
                   ),
-                  const SizedBox(height: 12),
-                ],
-              ),
+                ),
+                const SizedBox(height: 16),
+                ...stats.milestones
+                    .map((milestone) => _buildMilestoneCard(milestone)),
+                const SizedBox(height: 32),
+
+                // Point History
+                Text(
+                  'Point History',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...history.map((entry) => _buildHistoryItem(entry)),
+                const SizedBox(height: 100),
+              ],
             ),
           ),
-
-          // History List
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final entry = history[index];
-                return _buildHistoryItem(entry);
-              },
-              childCount: history.length,
-            ),
-          ),
-
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 80),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(EcoStats stats) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary500,
-            AppColors.primary700,
-          ],
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
+  Widget _buildHeroScoreCard(EcoStats stats) {
+    return AnimatedBuilder(
+      animation: _glowController,
+      builder: (context, child) {
+        return Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // Badge Icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppColors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.cardDark,
+                const Color(0xFF0F1A0A), // Dark green tint
+              ],
+            ),
+            border: Border.all(
+              color: AppColors.accentGreen.withValues(alpha: 0.15),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.accentGreen.withValues(
+                  alpha: 0.05 + (_glowController.value * 0.05),
                 ),
-                child: const Icon(
-                  Icons.eco,
-                  size: 48,
-                  color: AppColors.white,
+                blurRadius: 40,
+                spreadRadius: -4,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              // Progress Ring + Score
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: CustomPaint(
+                  painter: _EcoRingPainter(
+                    progress: stats.totalPoints / 2000,
+                    glowIntensity: _glowController.value,
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.eco_rounded,
+                          color: AppColors.accentGreen,
+                          size: 28,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${stats.totalPoints}',
+                          style: AppTextStyles.displayMedium.copyWith(
+                            color: AppColors.accentGreen,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
-              // Total Points
-              Text(
-                '${stats.totalPoints}',
-                style: const TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.white,
-                ),
-              ),
-              const SizedBox(height: 4),
               Text(
                 'Total Eco Points',
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: AppColors.white.withOpacity(0.9),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 8),
-              // Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
+                  color: AppColors.accentGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
                   '${stats.currentBadge.displayName} Badge',
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.accentGreen,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.white,
                   ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildStatCard(String value, String label, IconData icon, Color color) {
+  Widget _buildStatsGrid(EcoStats stats) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        _buildStatCard(
+          '${stats.totalWeightRecycled.toStringAsFixed(1)} kg',
+          'Recycled',
+          Icons.recycling_rounded,
+        ),
+        _buildStatCard(
+          '${stats.itemsSold}',
+          'Items Sold',
+          Icons.sell_rounded,
+        ),
+        _buildStatCard(
+          '${stats.pickupsCompleted}',
+          'Pickups',
+          Icons.local_shipping_rounded,
+        ),
+        _buildStatCard(
+          '${stats.co2Reduced.toStringAsFixed(1)} kg',
+          'CO₂ Reduced',
+          Icons.cloud_outlined,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard(String value, String label, IconData icon) {
+    final width = (MediaQuery.of(context).size.width - 60) / 2;
     return Container(
+      width: width,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.cardDark,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 28),
+          Icon(icon, color: AppColors.accentGreen, size: 24),
           const SizedBox(height: 12),
           Text(
             value,
-            style: AppTextStyles.headlineMedium.copyWith(
-              color: AppColors.gray900,
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             label,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.gray600,
+              color: AppColors.textTertiary,
             ),
           ),
         ],
@@ -296,31 +299,26 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.warning.withOpacity(0.1),
-            AppColors.warning.withOpacity(0.2),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.cardDark,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.warning.withOpacity(0.3),
+          color: AppColors.warning.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
       child: Row(
         children: [
           Container(
-            width: 60,
-            height: 60,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.2),
-              shape: BoxShape.circle,
+              color: AppColors.warning.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
-              Icons.local_fire_department,
+              Icons.local_fire_department_rounded,
               color: AppColors.warning,
-              size: 32,
+              size: 28,
             ),
           ),
           const SizedBox(width: 16),
@@ -331,14 +329,14 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
                 Text(
                   '${stats.currentStreak} Day Streak! 🔥',
                   style: AppTextStyles.headlineSmall.copyWith(
-                    color: AppColors.gray900,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Longest: ${stats.longestStreak} days',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.gray600,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ],
@@ -354,28 +352,34 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.cardDark,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: milestone.isAchieved ? AppColors.success : AppColors.gray300,
+          color: milestone.isAchieved
+              ? AppColors.accentGreen.withValues(alpha: 0.3)
+              : AppColors.border,
           width: 1,
         ),
       ),
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: milestone.isAchieved
-                  ? AppColors.success.withOpacity(0.1)
-                  : AppColors.gray100,
-              shape: BoxShape.circle,
+                  ? AppColors.accentGreen.withValues(alpha: 0.1)
+                  : AppColors.glassWhite,
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              milestone.isAchieved ? Icons.check_circle : Icons.lock_outline,
-              color: milestone.isAchieved ? AppColors.success : AppColors.gray500,
-              size: 24,
+              milestone.isAchieved
+                  ? Icons.check_circle_rounded
+                  : Icons.lock_outline_rounded,
+              color: milestone.isAchieved
+                  ? AppColors.accentGreen
+                  : AppColors.textMuted,
+              size: 22,
             ),
           ),
           const SizedBox(width: 16),
@@ -386,15 +390,14 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
                 Text(
                   milestone.title,
                   style: AppTextStyles.labelLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.gray900,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   milestone.description,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.gray600,
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ],
@@ -402,9 +405,8 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
           ),
           Text(
             '${milestone.requiredPoints} pts',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.gray600,
-              fontWeight: FontWeight.w600,
+            style: AppTextStyles.labelMedium.copyWith(
+              color: AppColors.textMuted,
             ),
           ),
         ],
@@ -414,11 +416,12 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
 
   Widget _buildHistoryItem(PointHistory entry) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.cardDark,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Row(
         children: [
@@ -426,16 +429,16 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.primary100,
-              shape: BoxShape.circle,
+              color: AppColors.accentGreen.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
-              Icons.add,
-              color: AppColors.primary500,
+              Icons.add_rounded,
+              color: AppColors.accentGreen,
               size: 20,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,14 +446,15 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
                 Text(
                   entry.reason,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.gray900,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   _formatDate(entry.date),
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.gray600,
+                    color: AppColors.textMuted,
                   ),
                 ),
               ],
@@ -459,8 +463,8 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
           Text(
             '+${entry.points}',
             style: AppTextStyles.headlineSmall.copyWith(
-              color: AppColors.primary500,
-              fontWeight: FontWeight.bold,
+              color: AppColors.accentGreen,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -481,5 +485,65 @@ class _EcoScoreScreenState extends State<EcoScoreScreen> {
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
+  }
+}
+
+// ─── ECO RING PAINTER ─────────────────────────────────────────────
+class _EcoRingPainter extends CustomPainter {
+  final double progress;
+  final double glowIntensity;
+
+  _EcoRingPainter({required this.progress, required this.glowIntensity});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 8;
+
+    // Background ring
+    final bgPaint = Paint()
+      ..color = AppColors.border
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Progress ring
+    final progressPaint = Paint()
+      ..color = AppColors.accentGreen
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round;
+
+    final clampedProgress = progress.clamp(0.0, 1.0);
+    final sweepAngle = 2 * math.pi * clampedProgress;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      sweepAngle,
+      false,
+      progressPaint,
+    );
+
+    // Glow
+    final glowPaint = Paint()
+      ..color = AppColors.accentGreen.withValues(alpha: 0.15 * glowIntensity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 14
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      sweepAngle,
+      false,
+      glowPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _EcoRingPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.glowIntensity != glowIntensity;
   }
 }

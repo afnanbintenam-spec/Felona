@@ -51,19 +51,30 @@ class _MainScreenState extends State<MainScreen> {
                 : 0;
 
             return Scaffold(
-              body: IndexedStack(
-                index: _currentIndex,
-                children: screens,
-              ),
-              bottomNavigationBar: AppBottomNavBar(
-                currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                userRole: user.role,
-                notificationCount: notificationCount,
+              backgroundColor: AppColors.black,
+              body: Stack(
+                children: [
+                  IndexedStack(
+                    index: _currentIndex,
+                    children: screens,
+                  ),
+                  // Floating bottom nav
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: AppBottomNavBar(
+                      currentIndex: _currentIndex,
+                      onTap: (index) {
+                        setState(() {
+                          _currentIndex = index;
+                        });
+                      },
+                      userRole: user.role,
+                      notificationCount: notificationCount,
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -116,9 +127,10 @@ class PlaceholderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.black,
       appBar: AppBar(
         title: Text(title),
-        backgroundColor: AppColors.white,
+        backgroundColor: AppColors.black,
         foregroundColor: AppColors.gray900,
         elevation: 0,
       ),
@@ -127,9 +139,9 @@ class PlaceholderScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.construction,
+              Icons.construction_rounded,
               size: 64,
-              color: AppColors.gray300,
+              color: AppColors.gray400,
             ),
             const SizedBox(height: 16),
             Text(
@@ -141,9 +153,9 @@ class PlaceholderScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'This feature is under development',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: AppColors.gray500,
               ),

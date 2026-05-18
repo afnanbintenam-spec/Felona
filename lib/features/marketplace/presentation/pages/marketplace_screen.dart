@@ -63,7 +63,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.gray50,
+      backgroundColor: const Color(0xFF0A0A0A),
       body: SafeArea(
         child: Column(
           children: [

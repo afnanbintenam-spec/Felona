@@ -9,14 +9,7 @@ import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_event.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 
-/// Login screen for existing users.
-///
-/// Features:
-/// - Email and password inputs
-/// - Form validation
-/// - BLoC integration
-/// - Forgot password link
-/// - Create account navigation
+/// Login screen — Premium Dark Theme
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -71,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: AppColors.background,
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
@@ -96,24 +89,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 40),
 
-                    // Logo
+                    // Big Logo
                     Center(
                       child: Image.asset(
                         'Assets/mainLogo.png',
-                        width: 120,
-                        height: 120,
+                        width: 160,
+                        height: 160,
+                        fit: BoxFit.contain,
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 40),
 
                     // Welcome Text
                     Text(
                       'Welcome Back',
                       style: AppTextStyles.displaySmall.copyWith(
-                        color: AppColors.gray900,
+                        color: AppColors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -128,7 +122,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       validator: _validateEmail,
                       keyboardType: TextInputType.emailAddress,
                       enabled: !isLoading,
-                      prefixIcon: const Icon(Icons.email_outlined),
+                      prefixIcon: const Icon(Icons.email_outlined,
+                          color: AppColors.textTertiary),
                     ),
 
                     const SizedBox(height: 16),
@@ -142,7 +137,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: true,
                       showPasswordToggle: true,
                       enabled: !isLoading,
-                      prefixIcon: const Icon(Icons.lock_outline),
+                      prefixIcon: const Icon(Icons.lock_outline,
+                          color: AppColors.textTertiary),
                     ),
 
                     const SizedBox(height: 8),
@@ -154,17 +150,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: isLoading
                             ? null
                             : () {
-                                // TODO: Implement forgot password
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Forgot password feature coming soon!'),
+                                    content: Text(
+                                        'Forgot password feature coming soon!'),
                                   ),
                                 );
                               },
                         child: Text(
                           'Forgot Password?',
                           style: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.primary500,
+                            color: AppColors.accentGreen,
                           ),
                         ),
                       ),
@@ -184,17 +180,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     // Divider
                     Row(
                       children: [
-                        const Expanded(child: Divider(color: AppColors.gray300)),
+                        Expanded(
+                            child: Divider(
+                                color: AppColors.border, thickness: 1)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
                             'or',
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.gray500,
+                              color: AppColors.textTertiary,
                             ),
                           ),
                         ),
-                        const Expanded(child: Divider(color: AppColors.gray300)),
+                        Expanded(
+                            child: Divider(
+                                color: AppColors.border, thickness: 1)),
                       ],
                     ),
 

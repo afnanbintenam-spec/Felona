@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 
-/// Custom text field component following the design system.
-///
-/// Features:
-/// - Floating label
-/// - Error state
-/// - Prefix/suffix icons
-/// - Password visibility toggle
-/// - 56px height
+/// Custom text field — Premium Dark Theme
+/// Dark filled background, subtle border, green focus state
 class CustomTextField extends StatefulWidget {
   final String label;
   final String? hintText;
@@ -70,25 +64,29 @@ class _CustomTextFieldState extends State<CustomTextField> {
       onChanged: widget.onChanged,
       style: const TextStyle(
         fontSize: 16,
-        color: AppColors.gray900,
+        color: AppColors.textPrimary,
+        fontFamily: 'Inter',
       ),
+      cursorColor: AppColors.accentGreen,
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hintText,
         labelStyle: const TextStyle(
           fontSize: 14,
-          color: AppColors.gray700,
+          color: AppColors.textTertiary,
+          fontFamily: 'Inter',
         ),
         hintStyle: const TextStyle(
           fontSize: 16,
-          color: AppColors.gray500,
+          color: AppColors.textMuted,
+          fontFamily: 'Inter',
         ),
         prefixIcon: widget.prefixIcon,
         suffixIcon: widget.showPasswordToggle
             ? IconButton(
                 icon: Icon(
                   _obscureText ? Icons.visibility_off : Icons.visibility,
-                  color: AppColors.gray500,
+                  color: AppColors.textTertiary,
                 ),
                 onPressed: () {
                   setState(() {
@@ -97,51 +95,51 @@ class _CustomTextFieldState extends State<CustomTextField> {
                 },
               )
             : widget.suffixIcon,
-        filled: !widget.enabled,
-        fillColor: widget.enabled ? AppColors.white : AppColors.gray100,
+        filled: true,
+        fillColor: widget.enabled ? AppColors.cardDark : AppColors.secondary300,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 16,
+          vertical: 18,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.gray300,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: AppColors.border,
             width: 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.gray300,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: AppColors.border,
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(
-            color: AppColors.primary500,
-            width: 2,
+            color: AppColors.accentGreen,
+            width: 1.5,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(
             color: AppColors.error,
-            width: 2,
+            width: 1.5,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(
             color: AppColors.error,
-            width: 2,
+            width: 1.5,
           ),
         ),
         disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: AppColors.gray300,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: AppColors.border,
             width: 1,
           ),
         ),
@@ -151,7 +149,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         ),
         counterStyle: const TextStyle(
           fontSize: 12,
-          color: AppColors.gray500,
+          color: AppColors.textTertiary,
         ),
       ),
     );

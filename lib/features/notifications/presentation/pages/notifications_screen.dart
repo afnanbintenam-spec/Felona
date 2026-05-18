@@ -41,7 +41,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       backgroundColor: AppColors.gray50,
       appBar: AppBar(
         title: const Text('Notifications'),
-        backgroundColor: AppColors.white,
+        backgroundColor: const Color(0xFF0A0A0A),
         foregroundColor: AppColors.gray900,
         elevation: 0,
         bottom: TabBar(
