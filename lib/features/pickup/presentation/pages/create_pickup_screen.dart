@@ -112,7 +112,7 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Request Pickup',
+          'Schedule a rescue 🚛',
           style: AppTextStyles.headlineSmall.copyWith(
             color: AppColors.gray900,
           ),
@@ -155,10 +155,10 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.primary100,
+                        color: AppColors.primaryGreen.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primary300,
+                          color: AppColors.primaryGreen.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -166,15 +166,15 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
                         children: [
                           Icon(
                             Icons.eco,
-                            color: AppColors.primary500,
+                            color: AppColors.primaryGreen,
                             size: 24,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Earn eco points for every pickup! Help the environment and get rewarded.',
+                              "We'll make sure it doesn't end up in a landfill. Earn eco points for every rescue!",
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.primary700,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ),
@@ -281,7 +281,7 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : AppColors.white,
+          color: isSelected ? color.withValues(alpha: 0.1) : AppColors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : AppColors.gray300,

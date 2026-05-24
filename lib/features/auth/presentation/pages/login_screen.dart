@@ -1,63 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
-import 'package:felo_na/core/constants/app_text_styles.dart';
-import 'package:felo_na/core/widgets/buttons/primary_button.dart';
-import 'package:felo_na/core/widgets/buttons/secondary_button.dart';
+import 'package:felo_na/core/constants/spacing.dart';
 import 'package:felo_na/core/widgets/inputs/custom_text_field.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_event.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 
-/// Login screen — Premium Dark Theme
+/// Login — Dark Teal Premium
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
-
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
 
   @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
+  void dispose() { _email.dispose(); _password.dispose(); super.dispose(); }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your email';
-    }
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value)) {
-      return 'Please enter a valid email';
-    }
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your password';
-    }
-    if (value.length < 8) {
-      return 'Password must be at least 8 characters';
-    }
-    return null;
-  }
-
-  void _handleLogin() {
+  void _login() {
     if (_formKey.currentState!.validate()) {
-      context.read<AuthBloc>().add(
-            LoginRequested(
-              email: _emailController.text.trim(),
-              password: _passwordController.text,
-            ),
-          );
+      context.read<AuthBloc>().add(LoginRequested(
+        email: _email.text.trim(), password: _password.text,
+      ));
     }
   }
 
@@ -66,171 +35,88 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: BlocConsumer<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is Authenticated) {
-            Navigator.pushReplacementNamed(context, '/main');
-          } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
+        listener: (ctx, state) {
+          if (state is Authenticated) Navigator.pushReplacementNamed(ctx, '/main');
+          if (state is AuthError) ScaffoldMessenger.of(ctx).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
+          );
         },
-        builder: (context, state) {
-          final isLoading = state is AuthLoading;
-
+        builder: (ctx, state) {
+          final loading = state is AuthLoading;
           return SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: Spacing.pagePadding,
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Back button
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1A1A1A),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF2A2A2A),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_ios_rounded,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Big Logo
-                    Center(
-                      child: Image.asset(
-                        'Assets/mainLogo.png',
-                        width: 160,
-                        height: 160,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // Welcome Text
-                    Text(
-                      'Welcome Back',
-                      style: AppTextStyles.displaySmall.copyWith(
-                        color: AppColors.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Email Field
+                    Spacing.gap40,
+                    Center(child: Image.asset('Assets/mainLogo.png', width: 100, height: 100)),
+                    Spacing.gap32,
+                    const Text('Welcome back', textAlign: TextAlign.center, style: TextStyle(
+                      fontFamily: 'Inter', fontSize: 24, fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    )),
+                    Spacing.gap8,
+                    const Text('Sign in to your eco journey', textAlign: TextAlign.center, style: TextStyle(
+                      fontFamily: 'Inter', fontSize: 14, color: AppColors.textTertiary,
+                    )),
+                    Spacing.gap32,
                     CustomTextField(
-                      label: 'Email',
-                      hintText: 'Enter your email',
-                      controller: _emailController,
-                      validator: _validateEmail,
+                      label: 'Email', hintText: 'your@email.com',
+                      controller: _email, enabled: !loading,
                       keyboardType: TextInputType.emailAddress,
-                      enabled: !isLoading,
-                      prefixIcon: const Icon(Icons.email_outlined,
-                          color: AppColors.textTertiary),
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      prefixIcon: const Icon(Icons.mail_outline_rounded, color: AppColors.textTertiary, size: 20),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Password Field
+                    Spacing.gap16,
                     CustomTextField(
-                      label: 'Password',
-                      hintText: 'Enter your password',
-                      controller: _passwordController,
-                      validator: _validatePassword,
-                      obscureText: true,
-                      showPasswordToggle: true,
-                      enabled: !isLoading,
-                      prefixIcon: const Icon(Icons.lock_outline,
-                          color: AppColors.textTertiary),
+                      label: 'Password', hintText: 'Enter password',
+                      controller: _password, enabled: !loading,
+                      obscureText: true, showPasswordToggle: true,
+                      validator: (v) => v == null || v.length < 8 ? 'Min 8 chars' : null,
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textTertiary, size: 20),
                     ),
-
-                    const SizedBox(height: 8),
-
-                    // Forgot Password
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        'Forgot password feature coming soon!'),
-                                  ),
-                                );
-                              },
-                        child: Text(
-                          'Forgot Password?',
-                          style: AppTextStyles.labelMedium.copyWith(
-                            color: AppColors.accentGreen,
-                          ),
+                    Spacing.gap24,
+                    // Sign in button
+                    GestureDetector(
+                      onTap: loading ? null : _login,
+                      child: Container(
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Center(child: loading
+                          ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Sign In', style: TextStyle(
+                              fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white,
+                            )),
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 24),
-
-                    // Login Button
-                    PrimaryButton(
-                      text: 'Log In',
-                      onPressed: isLoading ? null : _handleLogin,
-                      isLoading: isLoading,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Divider
-                    Row(
-                      children: [
-                        Expanded(
-                            child: Divider(
-                                color: AppColors.border, thickness: 1)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'or',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
+                    Spacing.gap24,
+                    Row(children: [
+                      const Expanded(child: Divider(color: AppColors.border)),
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text('or', style: TextStyle(fontSize: 13, color: AppColors.textTertiary))),
+                      const Expanded(child: Divider(color: AppColors.border)),
+                    ]),
+                    Spacing.gap24,
+                    GestureDetector(
+                      onTap: loading ? null : () => Navigator.pushNamed(context, '/register'),
+                      child: Container(
+                        height: 52,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.primaryGreen, width: 1.5),
                         ),
-                        Expanded(
-                            child: Divider(
-                                color: AppColors.border, thickness: 1)),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Create Account Button
-                    SecondaryButton(
-                      text: 'Create Account',
-                      onPressed: isLoading
-                          ? null
-                          : () => Navigator.pushNamed(context, '/register'),
+                        child: const Center(child: Text('Create Account', style: TextStyle(
+                          fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w600,
+                          color: AppColors.primaryGreen,
+                        ))),
+                      ),
                     ),
                   ],
                 ),

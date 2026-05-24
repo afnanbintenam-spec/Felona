@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/app_text_styles.dart';
-import 'package:felo_na/core/widgets/navigation/custom_app_bar.dart';
 import 'package:felo_na/core/widgets/chips/status_badge.dart';
 import 'package:felo_na/core/widgets/buttons/primary_button.dart';
 import 'package:felo_na/core/widgets/buttons/text_button_widget.dart';
@@ -70,9 +69,9 @@ class _OffersScreenState extends State<OffersScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: const Color(0xFF1A2B2E),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: const Color(0xFF1A2B2E),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
@@ -92,7 +91,7 @@ class _OffersScreenState extends State<OffersScreen>
         children: [
           // Tabs
           Container(
-            color: const Color(0xFF0A0A0A),
+            color: const Color(0xFF1A2B2E),
             child: TabBar(
               controller: _tabController,
               labelColor: AppColors.primary500,
@@ -217,8 +216,8 @@ class _OffersScreenState extends State<OffersScreen>
               ),
               // Status badge
               StatusBadge(
-                label: _getStatusLabel(offer.status),
-                type: _getStatusType(offer.status),
+                text: _getStatusLabel(offer.status),
+                color: _getStatusColor(offer.status),
               ),
             ],
           ),
@@ -281,7 +280,6 @@ class _OffersScreenState extends State<OffersScreen>
                   child: PrimaryButton(
                     text: 'Accept',
                     onPressed: () => _handleAcceptOffer(offer),
-                    height: 40,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -311,14 +309,14 @@ class _OffersScreenState extends State<OffersScreen>
     }
   }
 
-  StatusType _getStatusType(OfferStatus status) {
+  Color _getStatusColor(OfferStatus status) {
     switch (status) {
       case OfferStatus.pending:
-        return StatusType.pending;
+        return AppColors.warning;
       case OfferStatus.accepted:
-        return StatusType.completed;
+        return AppColors.success;
       case OfferStatus.rejected:
-        return StatusType.rejected;
+        return AppColors.error;
     }
   }
 

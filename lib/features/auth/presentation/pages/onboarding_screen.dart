@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
-import 'package:felo_na/core/constants/app_text_styles.dart';
 
+/// Onboarding — Dark teal with SVG illustrations
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -10,31 +11,27 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+  final PageController _pc = PageController();
+  int _page = 0;
 
-  final List<OnboardingPage> _pages = [
-    OnboardingPage(
-      title: 'Sell Your Reusables',
-      description:
-          'List items you no longer need and find buyers who can give them a second life.',
-    ),
-    OnboardingPage(
-      title: 'Request Waste Pickup',
-      description:
-          'Schedule convenient pickups for recyclable waste and contribute to a cleaner environment.',
-    ),
-    OnboardingPage(
-      title: 'Earn Eco Points',
-      description:
-          'Track your environmental impact and earn rewards for every sustainable action you take.',
-    ),
+  final _pages = [
+    _PD('Assets/illustrations/onboarding_reuse.svg', 'Reuse',
+        'Give your items a second life.\nList what you no longer need.'),
+    _PD('Assets/illustrations/onboarding_reduce.svg', 'Reduce',
+        'Schedule waste pickups effortlessly.\nReduce your footprint every day.'),
+    _PD('Assets/illustrations/onboarding_recycle.svg', 'Recycle',
+        'Earn eco points for every action.\nMake sustainability rewarding.'),
   ];
 
   @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  void dispose() { _pc.dispose(); super.dispose(); }
+
+  void _next() {
+    if (_page < 2) {
+      _pc.nextPage(duration: const Duration(milliseconds: 350), curve: Curves.easeInOut);
+    } else {
+      Navigator.pushReplacementNamed(context, '/login');
+    }
   }
 
   @override
@@ -44,93 +41,62 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Skip Button
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16, top: 8),
-                child: TextButton(
-                  onPressed: () =>
-                      Navigator.pushReplacementNamed(context, '/login'),
-                  child: Text(
-                    'Skip',
-                    style: AppTextStyles.labelLarge.copyWith(
-                      color: AppColors.accentGreen,
-                    ),
-                  ),
+            Padding(
+              padding: const EdgeInsets.only(right: 24, top: 12),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: GestureDetector(
+                  onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+                  child: const Text('Skip', style: TextStyle(
+                    fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500,
+                    color: AppColors.textTertiary,
+                  )),
                 ),
               ),
             ),
-
-            // Page View
             Expanded(
               child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                itemCount: _pages.length,
-                itemBuilder: (context, index) {
-                  return _buildPage(_pages[index]);
-                },
+                controller: _pc,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemCount: 3,
+                itemBuilder: (_, i) => _buildPage(_pages[i]),
               ),
             ),
-
-            // Dots Indicator
+            // Dots
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                _pages.length,
-                (index) => _buildDot(index),
-              ),
+              children: List.generate(3, (i) => AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: _page == i ? 24 : 8, height: 8,
+                decoration: BoxDecoration(
+                  color: _page == i ? AppColors.primaryGreen : AppColors.border,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              )),
             ),
-
-            const SizedBox(height: 40),
-
-            // Next/Get Started Button
+            const SizedBox(height: 32),
+            // Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: GestureDetector(
-                onTap: () {
-                  if (_currentPage < _pages.length - 1) {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                    );
-                  } else {
-                    Navigator.pushReplacementNamed(context, '/login');
-                  }
-                },
+                onTap: _next,
                 child: Container(
-                  width: double.infinity,
-                  height: 56,
+                  width: double.infinity, height: 52,
                   decoration: BoxDecoration(
-                    color: AppColors.accentGreen,
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.accentGreen.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    color: AppColors.primaryGreen,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Center(
-                    child: Text(
-                      _currentPage < _pages.length - 1 ? 'Next' : 'Get Started',
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.background,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
+                  child: Center(child: Text(
+                    _page < 2 ? 'Continue' : 'Get Started',
+                    style: const TextStyle(
+                      fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
-                  ),
+                  )),
                 ),
               ),
             ),
-
             const SizedBox(height: 32),
           ],
         ),
@@ -138,68 +104,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _buildPage(OnboardingPage page) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Big Logo
-          Image.asset(
-            'Assets/mainLogo.png',
-            width: 180,
-            height: 180,
-            fit: BoxFit.contain,
+  Widget _buildPage(_PD p) {
+    return Column(
+      children: [
+        Expanded(
+          flex: 5,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: SvgPicture.asset(p.svg, fit: BoxFit.contain),
           ),
-
-          const SizedBox(height: 48),
-
-          // Title
-          Text(
-            page.title,
-            style: AppTextStyles.displaySmall.copyWith(
-              color: AppColors.textPrimary,
+        ),
+        Expanded(
+          flex: 3,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(p.title, style: const TextStyle(
+                  fontFamily: 'Inter', fontSize: 26, fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ), textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                Text(p.desc, style: const TextStyle(
+                  fontFamily: 'Inter', fontSize: 14, height: 1.6,
+                  color: AppColors.textSecondary,
+                ), textAlign: TextAlign.center),
+              ],
             ),
-            textAlign: TextAlign.center,
           ),
-
-          const SizedBox(height: 16),
-
-          // Description
-          Text(
-            page.description,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDot(int index) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      width: _currentPage == index ? 24 : 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: _currentPage == index
-            ? AppColors.accentGreen
-            : AppColors.gray400,
-        borderRadius: BorderRadius.circular(4),
-      ),
+        ),
+      ],
     );
   }
 }
 
-class OnboardingPage {
-  final String title;
-  final String description;
-
-  OnboardingPage({
-    required this.title,
-    required this.description,
-  });
+class _PD {
+  final String svg, title, desc;
+  _PD(this.svg, this.title, this.desc);
 }

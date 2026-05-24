@@ -2,13 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/enums.dart';
 
-/// Role selection card for registration screen.
-///
-/// Features:
-/// - Visual selection state
-/// - Role icon, title, and description
-/// - Radio button indicator
-/// - Tap animation
+/// Role selection card — Dark Teal theme
 class RoleSelectionCard extends StatelessWidget {
   final UserRole role;
   final bool isSelected;
@@ -24,60 +18,59 @@ class RoleSelectionCard extends StatelessWidget {
   IconData _getRoleIcon() {
     switch (role) {
       case UserRole.normalUser:
-        return Icons.eco;
+        return Icons.eco_rounded;
       case UserRole.buyer:
-        return Icons.shopping_bag;
+        return Icons.shopping_bag_rounded;
       case UserRole.collector:
-        return Icons.local_shipping;
+        return Icons.local_shipping_rounded;
     }
   }
 
   Color _getRoleColor() {
     switch (role) {
       case UserRole.normalUser:
-        return AppColors.primary500;
+        return AppColors.primaryGreen;
       case UserRole.buyer:
-        return AppColors.accent500;
+        return const Color(0xFF42A5F5); // blue
       case UserRole.collector:
-        return AppColors.secondary500;
+        return const Color(0xFFFF8A65); // orange
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final color = _getRoleColor();
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        height: 80,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? _getRoleColor().withOpacity(0.05) : AppColors.white,
+          color: isSelected
+              ? color.withValues(alpha: 0.08)
+              : AppColors.card,
           border: Border.all(
-            color: isSelected ? _getRoleColor() : AppColors.gray300,
+            color: isSelected ? color : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            // Role Icon
+            // Icon
             Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: _getRoleColor().withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                _getRoleIcon(),
-                color: _getRoleColor(),
-                size: 28,
-              ),
+              child: Icon(_getRoleIcon(), color: color, size: 24),
             ),
             const SizedBox(width: 16),
-            // Title and Description
+            // Text
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,40 +79,38 @@ class RoleSelectionCard extends StatelessWidget {
                   Text(
                     role.displayName,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontFamily: 'Inter',
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: isSelected ? _getRoleColor() : AppColors.gray900,
+                      color: isSelected ? color : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     role.description,
                     style: const TextStyle(
+                      fontFamily: 'Inter',
                       fontSize: 12,
-                      color: AppColors.gray700,
+                      color: AppColors.textTertiary,
                     ),
                   ),
                 ],
               ),
             ),
-            // Radio Indicator
+            // Radio
             Container(
               width: 24,
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? _getRoleColor() : AppColors.gray300,
+                  color: isSelected ? color : AppColors.textMuted,
                   width: 2,
                 ),
-                color: isSelected ? _getRoleColor() : Colors.transparent,
+                color: isSelected ? color : Colors.transparent,
               ),
               child: isSelected
-                  ? const Icon(
-                      Icons.check,
-                      size: 16,
-                      color: AppColors.white,
-                    )
+                  ? const Icon(Icons.check_rounded, size: 14, color: Colors.white)
                   : null,
             ),
           ],

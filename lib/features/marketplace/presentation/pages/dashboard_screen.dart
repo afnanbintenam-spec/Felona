@@ -1,11 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
-import 'package:felo_na/core/constants/app_text_styles.dart';
+import 'package:felo_na/core/constants/eco_levels.dart';
+import 'package:felo_na/core/constants/spacing.dart';
 
-/// Premium Dashboard Screen — Pixel-perfect dark theme
-/// Matches the reference design: dark background, green gradient hero card,
-/// dark cards with subtle green borders, floating action buttons with glow
+/// Dashboard — Dark Teal Eco Premium (Experience-based)
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -15,44 +14,50 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _glowController;
+  late AnimationController _ringController;
+
+  // TODO: Replace with real user data from BLoC
+  final int _userPoints = 1250;
 
   @override
   void initState() {
     super.initState();
-    _glowController = AnimationController(
+    _ringController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
+      duration: const Duration(seconds: 2),
+    )..forward();
   }
 
   @override
   void dispose() {
-    _glowController.dispose();
+    _ringController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
+          padding: Spacing.pagePadding,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTopBar(),
-              _buildGreeting(),
-              const SizedBox(height: 20),
-              _buildEcoPointsCard(),
-              const SizedBox(height: 16),
+              Spacing.gap16,
+              _buildHeader(context),
+              Spacing.gap32,
+              _buildEcoScoreCard(),
+              Spacing.gap24,
+              _buildAIScanButton(context),
+              Spacing.gap24,
               _buildStatsRow(),
-              const SizedBox(height: 16),
-              _buildPickupScheduleCard(),
-              const SizedBox(height: 24),
-              _buildQuickActions(),
-              const SizedBox(height: 28),
+              Spacing.gap24,
+              _buildUpcomingPickup(context),
+              Spacing.gap32,
+              _buildQuickActions(context),
+              Spacing.gap32,
               _buildRecentActivity(),
               const SizedBox(height: 100),
             ],
@@ -62,234 +67,224 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ─── TOP BAR ──────────────────────────────────────────────────
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      child: Row(
-        children: [
-          // Logo + Brand
-          Row(
-            children: [
-              Image.asset(
-                'Assets/mainLogo.png',
-                width: 32,
-                height: 32,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'FeloNa',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.accentGreen,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          // Notification bell
-          _buildIconButton(Icons.notifications_outlined, () {
-            Navigator.pushNamed(context, '/notifications');
-          }),
-          const SizedBox(width: 12),
-          // Avatar
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, '/profile'),
-            child: Container(
-              width: 36,
-              height: 36,
+  // ─── HEADER ───────────────────────────────────────────────────
+  Widget _buildHeader(BuildContext context) {
+    final level = EcoLevels.fromPoints(_userPoints);
+    final levelNum = EcoLevels.levelNumber(_userPoints);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            // Avatar
+            Container(
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.accentGreen.withValues(alpha: 0.4),
-                  width: 2,
-                ),
-                color: const Color(0xFF1A1A1A),
+                color: AppColors.card,
+                border: Border.all(color: AppColors.primaryGreen, width: 2),
               ),
-              child: const ClipOval(
-                child: Center(
-                  child: Text(
-                    'A',
-                    style: TextStyle(
-                      color: AppColors.accentGreen,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
+              child: const Center(
+                child: Text('A', style: TextStyle(
+                  fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w700,
+                  color: AppColors.primaryGreen,
+                )),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIconButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: const Color(0xFF2A2A2A),
-            width: 1,
-          ),
-        ),
-        child: Icon(icon, color: Colors.white70, size: 20),
-      ),
-    );
-  }
-
-  // ─── GREETING ─────────────────────────────────────────────────
-  Widget _buildGreeting() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Good Morning,',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: Colors.white.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Afnan 👋',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "Let's make the planet better today.",
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: Colors.white.withValues(alpha: 0.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── ECO POINTS HERO CARD ─────────────────────────────────────
-  Widget _buildEcoPointsCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          color: AppColors.accentGreen,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accentGreen.withValues(alpha: 0.2),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ECO POINTS label
-            Row(
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.eco_rounded,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'ECO POINTS',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Big score
-            const Text(
-              '1,250',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 48,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                height: 1.0,
-              ),
-            ),
-            const Text(
-              'pts',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: Colors.white70,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
+            Spacing.hGap12,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '📈',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Top recycler this week',
+                    '${level.display} • Level $levelNum',
                     style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
+                      fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500,
+                      color: level.color,
                     ),
                   ),
+                  const SizedBox(height: 2),
+                  const Text('Hello, Afnan', style: TextStyle(
+                    fontFamily: 'Inter', fontSize: 20, fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  )),
                 ],
               ),
             ),
+            _iconBtn(Icons.notifications_outlined, () {
+              Navigator.pushNamed(context, '/notifications');
+            }),
+          ],
+        ),
+        Spacing.gap12,
+        // Motivational message
+        const Text(
+          'Every small action creates a ripple 🌊',
+          style: TextStyle(
+            fontFamily: 'Inter', fontSize: 13, color: AppColors.textTertiary,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _iconBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42, height: 42,
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.border, width: 1),
+        ),
+        child: Icon(icon, color: AppColors.textSecondary, size: 20),
+      ),
+    );
+  }
+
+  // ─── ECO SCORE CARD (with level progress) ─────────────────────
+  Widget _buildEcoScoreCard() {
+    final level = EcoLevels.fromPoints(_userPoints);
+    final nextLevel = EcoLevels.nextLevel(_userPoints);
+    final progress = level.progressFor(_userPoints);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Row(
+        children: [
+          // Score ring
+          AnimatedBuilder(
+            animation: _ringController,
+            builder: (_, _) {
+              return SizedBox(
+                width: 100, height: 100,
+                child: CustomPaint(
+                  painter: _EcoRingPainter(
+                    progress: _ringController.value * progress,
+                    color: level.color,
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(level.emoji, style: const TextStyle(fontSize: 24)),
+                        const SizedBox(height: 2),
+                        Text(level.name, style: TextStyle(
+                          fontFamily: 'Inter', fontSize: 11,
+                          fontWeight: FontWeight.w600, color: level.color,
+                        )),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          Spacing.hGap16,
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$_userPoints eco points',
+                  style: const TextStyle(
+                    fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Spacing.gap8,
+                // Progress bar to next level
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: AppColors.surface,
+                    valueColor: AlwaysStoppedAnimation<Color>(level.color),
+                  ),
+                ),
+                Spacing.gap8,
+                if (nextLevel != null)
+                  Text(
+                    '${level.pointsToNext(_userPoints)} pts to ${nextLevel.name} ${nextLevel.emoji}',
+                    style: const TextStyle(
+                      fontFamily: 'Inter', fontSize: 12, color: AppColors.textTertiary,
+                    ),
+                  )
+                else
+                  const Text(
+                    'Max level reached! 🌍',
+                    style: TextStyle(
+                      fontFamily: 'Inter', fontSize: 12, color: AppColors.tealGreen,
+                    ),
+                  ),
+                Spacing.gap4,
+                const Text('Last 30 days: +245 pts', style: TextStyle(
+                  fontFamily: 'Inter', fontSize: 12, color: AppColors.textSecondary,
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── AI SCAN BUTTON ───────────────────────────────────────────
+  Widget _buildAIScanButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(context, '/waste-scanner'),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGreen,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryGreen.withValues(alpha: 0.3),
+              blurRadius: 16, offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 22),
+            ),
+            Spacing.hGap16,
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Scan Waste', style: TextStyle(
+                  fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                )),
+                SizedBox(height: 2),
+                Text('AI identifies & categorizes instantly', style: TextStyle(
+                  fontFamily: 'Inter', fontSize: 12, color: Colors.white70,
+                )),
+              ],
+            ),
+            const Spacer(),
+            const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 22),
           ],
         ),
       ),
@@ -298,449 +293,234 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // ─── STATS ROW ────────────────────────────────────────────────
   Widget _buildStatsRow() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
+    return Row(
+      children: [
+        Expanded(child: _statCard('12', 'Recycled', Icons.recycling_rounded)),
+        Spacing.hGap12,
+        Expanded(child: _statCard('8', 'Listed', Icons.sell_rounded)),
+        Spacing.hGap12,
+        Expanded(child: _statCard('3', 'Pickups', Icons.local_shipping_rounded)),
+      ],
+    );
+  }
+
+  Widget _statCard(String value, String label, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Column(
         children: [
-          Expanded(
-            child: _buildStatCard(
-              icon: Icons.sell_rounded,
-              iconColor: AppColors.accentGreen,
-              value: '8',
-              label: 'Items Listed',
-              hasViewAll: true,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              icon: Icons.local_shipping_rounded,
-              iconColor: AppColors.accentGreen,
-              value: '3',
-              label: 'Awaiting Pickup',
-              hasViewAll: true,
-            ),
-          ),
+          Icon(icon, color: AppColors.primaryGreen, size: 22),
+          Spacing.gap8,
+          Text(value, style: const TextStyle(
+            fontFamily: 'Inter', fontSize: 22, fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          )),
+          Spacing.gap4,
+          Text(label, style: const TextStyle(
+            fontFamily: 'Inter', fontSize: 11, color: AppColors.textTertiary,
+          )),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required Color iconColor,
-    required String value,
-    required String label,
-    bool hasViewAll = false,
-  }) {
+  // ─── UPCOMING PICKUP ──────────────────────────────────────────
+  Widget _buildUpcomingPickup(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.accentGreen.withValues(alpha: 0.1),
-          width: 1,
-        ),
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 44, height: 44,
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primaryGreen.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconColor, size: 18),
+            child: const Icon(Icons.schedule_rounded, color: AppColors.primaryGreen, size: 22),
           ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
-              color: Colors.white.withValues(alpha: 0.5),
-            ),
-          ),
-          if (hasViewAll) ...[
-            const SizedBox(height: 8),
-            Row(
+          Spacing.hGap12,
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'View all',
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.accentGreen.withValues(alpha: 0.8),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 14,
-                  color: AppColors.accentGreen.withValues(alpha: 0.8),
-                ),
+                Text('Next Pickup', style: TextStyle(
+                  fontFamily: 'Inter', fontSize: 13, color: AppColors.textTertiary,
+                )),
+                SizedBox(height: 2),
+                Text('Tomorrow, 2:30 PM', style: TextStyle(
+                  fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                )),
               ],
             ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ─── PICKUP SCHEDULE CARD ─────────────────────────────────────
-  Widget _buildPickupScheduleCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF141414),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.accentGreen.withValues(alpha: 0.1),
-            width: 1,
           ),
-        ),
-        child: Row(
-          children: [
-            // Left content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: AppColors.accentGreen.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.calendar_today_rounded,
-                          color: AppColors.accentGreen,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Pickup scheduled',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.white.withValues(alpha: 0.6),
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Tomorrow, 2:30 PM',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Text(
-                        'See details',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.accentGreen.withValues(alpha: 0.8),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 14,
-                        color: AppColors.accentGreen.withValues(alpha: 0.8),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // Right: Truck illustration placeholder
-            Container(
-              width: 80,
-              height: 60,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.local_shipping_rounded,
-                size: 40,
-                color: AppColors.accentGreen.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
+          Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 22),
+        ],
       ),
     );
   }
 
   // ─── QUICK ACTIONS ────────────────────────────────────────────
-  Widget _buildQuickActions() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // List an Item
-          _buildActionButton(
-            icon: Icons.add_rounded,
-            label: 'List an Item',
-            onTap: () => Navigator.pushNamed(context, '/create-listing'),
-          ),
-          const SizedBox(width: 40),
-          // Request Pickup
-          _buildActionButton(
-            icon: Icons.local_shipping_rounded,
-            label: 'Request Pickup',
-            onTap: () => Navigator.pushNamed(context, '/create-pickup'),
-          ),
-        ],
-      ),
+  Widget _buildQuickActions(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: _actionCard(
+          icon: Icons.favorite_outline_rounded, label: 'Give it a new life',
+          onTap: () => Navigator.pushNamed(context, '/create-listing'),
+        )),
+        Spacing.hGap12,
+        Expanded(child: _actionCard(
+          icon: Icons.local_shipping_outlined, label: 'Schedule rescue',
+          onTap: () => Navigator.pushNamed(context, '/create-pickup'),
+        )),
+      ],
     );
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
+  Widget _actionCard({required IconData icon, required String label, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          AnimatedBuilder(
-            animation: _glowController,
-            builder: (context, child) {
-              return Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF1A1A1A),
-                  border: Border.all(
-                    color: AppColors.accentGreen.withValues(
-                      alpha: 0.3 + (_glowController.value * 0.3),
-                    ),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.accentGreen.withValues(
-                        alpha: 0.1 + (_glowController.value * 0.1),
-                      ),
-                      blurRadius: 16,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  icon,
-                  color: AppColors.accentGreen,
-                  size: 26,
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.7),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3), width: 1),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.primaryGreen, size: 22),
             ),
-          ),
-        ],
+            Spacing.gap8,
+            Text(label, textAlign: TextAlign.center, style: const TextStyle(
+              fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            )),
+          ],
+        ),
       ),
     );
   }
 
-  // ─── RECENT ACTIVITY ──────────────────────────────────────────
+  // ─── RECENT ACTIVITY (emotional copy) ─────────────────────────
   Widget _buildRecentActivity() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Recent Activity',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                'View All',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.accentGreen.withValues(alpha: 0.8),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Activity items
-          _buildActivityItem(
-            icon: Icons.check_circle_rounded,
-            iconBgColor: const Color(0xFF0A2E0A),
-            iconColor: AppColors.success,
-            title: 'Earned 50 eco points',
-            subtitle: '2 hours ago',
-            badge: '+50 pts',
-            badgeColor: AppColors.accentGreen,
-          ),
-          const SizedBox(height: 10),
-          _buildActivityItem(
-            icon: Icons.play_arrow_rounded,
-            iconBgColor: const Color(0xFF1A1040),
-            iconColor: const Color(0xFF8B5CF6),
-            title: 'Someone offered \$25 for your item',
-            subtitle: '5 hours ago',
-            badge: '+\$25',
-            badgeColor: AppColors.accentGreen,
-          ),
-          const SizedBox(height: 10),
-          _buildActivityItem(
-            icon: Icons.local_shipping_rounded,
-            iconBgColor: const Color(0xFF2E1A0A),
-            iconColor: const Color(0xFFFF8C00),
-            title: 'Pickup completed',
-            subtitle: '1 day ago',
-            badge: 'Completed',
-            badgeColor: AppColors.accentGreen,
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Recent Activity', style: TextStyle(
+          fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        )),
+        Spacing.gap16,
+        _activityTile(
+          Icons.eco_rounded,
+          AppColors.success,
+          '🌱 +50 points — growing your impact!',
+          '2h ago',
+        ),
+        Spacing.gap8,
+        _activityTile(
+          Icons.favorite_rounded,
+          AppColors.accentOrange,
+          '💚 Someone wants to give your item a second life',
+          '5h ago',
+        ),
+        Spacing.gap8,
+        _activityTile(
+          Icons.public_rounded,
+          AppColors.accentBlue,
+          '🌍 3.2kg saved from landfill!',
+          '1 day ago',
+        ),
+      ],
     );
   }
 
-  Widget _buildActivityItem({
-    required IconData icon,
-    required Color iconBgColor,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required String badge,
-    required Color badgeColor,
-  }) {
+  Widget _activityTile(IconData icon, Color color, String title, String time) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF1E1E1E),
-          width: 1,
-        ),
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Row(
         children: [
-          // Icon
           Container(
-            width: 40,
-            height: 40,
+            width: 36, height: 36,
             decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(12),
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: iconColor, size: 20),
+            child: Icon(icon, color: color, size: 18),
           ),
-          const SizedBox(width: 12),
-          // Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white.withValues(alpha: 0.4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: badgeColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: badgeColor.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: Text(
-              badge,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: badgeColor,
-              ),
-            ),
-          ),
+          Spacing.hGap12,
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: const TextStyle(
+                fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              )),
+              Text(time, style: const TextStyle(
+                fontFamily: 'Inter', fontSize: 12, color: AppColors.textTertiary,
+              )),
+            ],
+          )),
         ],
       ),
     );
   }
+}
+
+// ─── ECO RING PAINTER ─────────────────────────────────────────────
+class _EcoRingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  _EcoRingPainter({required this.progress, this.color = AppColors.primaryGreen});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 8;
+
+    // Background ring
+    canvas.drawCircle(center, radius, Paint()
+      ..color = AppColors.border
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round);
+
+    // Progress
+    final sweep = 2 * math.pi * progress;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2, sweep, false,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 8
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _EcoRingPainter old) =>
+      old.progress != progress || old.color != color;
 }

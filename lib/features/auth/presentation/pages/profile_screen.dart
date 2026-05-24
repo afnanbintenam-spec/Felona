@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -37,6 +39,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _isEditing = false;
   String? _selectedImagePath;
+  Uint8List? _selectedImageBytes;
 
   @override
   void initState() {
@@ -125,8 +128,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Validate size
       if (!await _validateImageSize(image)) return;
 
+      final bytes = await image.readAsBytes();
+
       setState(() {
         _selectedImagePath = image.path;
+        _selectedImageBytes = bytes;
       });
 
       // Upload the image via AuthBloc
@@ -256,6 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _showSuccess('Profile picture updated');
             setState(() {
               _selectedImagePath = null;
+              _selectedImageBytes = null;
             });
           } else if (state is Unauthenticated) {
             Navigator.pushReplacementNamed(context, '/login');
@@ -408,9 +415,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileImage(User user) {
-    if (_selectedImagePath != null) {
-      return Image.file(
-        File(_selectedImagePath!),
+    if (_selectedImageBytes != null) {
+      return Image.memory(
+        _selectedImageBytes!,
         fit: BoxFit.cover,
         width: 100,
         height: 100,

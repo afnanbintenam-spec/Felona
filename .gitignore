@@ -43,3 +43,16 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Backend
+backend/node_modules/
+backend/uploads/
+backend/.env
+
+# Build artifacts
+build/
+.dart_tool/
+
+# IDE
+.vscode/
+*.iml

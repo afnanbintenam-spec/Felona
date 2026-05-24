@@ -74,7 +74,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: AppSearchBar(
-                hintText: 'Search items...',
+                hintText: 'Find items that need a home...',
                 onSearch: _onSearch,
               ),
             ),
@@ -184,12 +184,20 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.pushNamed(context, '/create-listing');
         },
         backgroundColor: AppColors.primary500,
-        child: const Icon(Icons.add, color: AppColors.white),
+        icon: const Icon(Icons.add, color: AppColors.white),
+        label: const Text(
+          'List something beautiful',
+          style: TextStyle(
+            color: AppColors.white,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

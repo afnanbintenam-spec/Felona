@@ -17,6 +17,10 @@ import 'package:felo_na/features/auth/presentation/pages/login_screen.dart';
 import 'package:felo_na/features/auth/presentation/pages/register_screen.dart';
 import 'package:felo_na/features/auth/presentation/pages/profile_screen.dart';
 
+// AI screens
+import 'package:felo_na/features/ai/presentation/pages/waste_scanner_screen.dart';
+import 'package:felo_na/features/ai/presentation/pages/recycling_chat_screen.dart';
+
 // Marketplace screens
 import 'package:felo_na/features/marketplace/presentation/pages/main_screen.dart';
 import 'package:felo_na/features/marketplace/presentation/pages/dashboard_screen.dart';
@@ -83,6 +87,8 @@ class FeloNaApp extends StatelessWidget {
           '/eco-score': (context) => const EcoScoreScreen(),
           '/notifications': (context) => const NotificationsScreen(),
           '/profile': (context) => const ProfileScreen(),
+          '/waste-scanner': (context) => const WasteScannerScreen(),
+          '/recycling-chat': (context) => const RecyclingChatScreen(),
         },
       ),
     );

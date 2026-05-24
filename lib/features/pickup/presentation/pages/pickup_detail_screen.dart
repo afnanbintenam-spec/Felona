@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/app_text_styles.dart';
-import 'package:felo_na/core/widgets/navigation/custom_app_bar.dart';
 import 'package:felo_na/core/widgets/chips/category_chip.dart';
 import 'package:felo_na/core/widgets/buttons/primary_button.dart';
 import 'package:felo_na/core/widgets/buttons/secondary_button.dart';
@@ -30,9 +29,9 @@ class _PickupDetailScreenState extends State<PickupDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: const Color(0xFF1A2B2E),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: const Color(0xFF1A2B2E),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
@@ -242,6 +241,7 @@ class _PickupDetailScreenState extends State<PickupDetailScreen> {
               CategoryChip(
                 label: _wasteCategory,
                 isSelected: true,
+                onTap: () {},
               ),
             ],
           ),
@@ -396,7 +396,6 @@ class _PickupDetailScreenState extends State<PickupDetailScreen> {
                   onPressed: () {
                     // TODO: Implement call functionality
                   },
-                  height: 44,
                 ),
               ),
               const SizedBox(width: 12),
@@ -407,7 +406,6 @@ class _PickupDetailScreenState extends State<PickupDetailScreen> {
                   onPressed: () {
                     // TODO: Implement message functionality
                   },
-                  height: 44,
                 ),
               ),
             ],

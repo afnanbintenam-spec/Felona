@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/enums.dart';
 
-/// Floating Bottom Navigation Bar — Pixel-perfect dark theme
-/// Dark background, green active state, labels always visible
+/// Floating Bottom Nav — Dark Teal Premium
 class AppBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -11,38 +10,35 @@ class AppBottomNavBar extends StatelessWidget {
   final int? notificationCount;
 
   const AppBottomNavBar({
-    super.key,
-    required this.currentIndex,
-    required this.onTap,
-    required this.userRole,
-    this.notificationCount,
+    super.key, required this.currentIndex, required this.onTap,
+    required this.userRole, this.notificationCount,
   });
 
   List<_NavItem> _getNavItems() {
     switch (userRole) {
       case UserRole.normalUser:
         return [
-          _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
-          _NavItem(icon: Icons.store_outlined, activeIcon: Icons.store_rounded, label: 'Marketplace'),
-          _NavItem(icon: Icons.local_shipping_outlined, activeIcon: Icons.local_shipping_rounded, label: 'Pickups'),
-          _NavItem(icon: Icons.eco_outlined, activeIcon: Icons.eco_rounded, label: 'Eco Score'),
-          _NavItem(icon: Icons.person_outline, activeIcon: Icons.person_rounded, label: 'Profile'),
+          _NavItem(Icons.home_outlined, Icons.home_rounded, 'Home'),
+          _NavItem(Icons.store_outlined, Icons.store_rounded, 'Market'),
+          _NavItem(Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Pickups'),
+          _NavItem(Icons.eco_outlined, Icons.eco_rounded, 'Eco'),
+          _NavItem(Icons.person_outline, Icons.person_rounded, 'Profile'),
         ];
       case UserRole.buyer:
         return [
-          _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
-          _NavItem(icon: Icons.search_outlined, activeIcon: Icons.search_rounded, label: 'Search'),
-          _NavItem(icon: Icons.shopping_bag_outlined, activeIcon: Icons.shopping_bag_rounded, label: 'Offers'),
-          _NavItem(icon: Icons.chat_bubble_outline, activeIcon: Icons.chat_bubble_rounded, label: 'Chat'),
-          _NavItem(icon: Icons.person_outline, activeIcon: Icons.person_rounded, label: 'Profile'),
+          _NavItem(Icons.home_outlined, Icons.home_rounded, 'Home'),
+          _NavItem(Icons.search_outlined, Icons.search_rounded, 'Search'),
+          _NavItem(Icons.shopping_bag_outlined, Icons.shopping_bag_rounded, 'Offers'),
+          _NavItem(Icons.chat_bubble_outline, Icons.chat_bubble_rounded, 'Chat'),
+          _NavItem(Icons.person_outline, Icons.person_rounded, 'Profile'),
         ];
       case UserRole.collector:
         return [
-          _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
-          _NavItem(icon: Icons.map_outlined, activeIcon: Icons.map_rounded, label: 'Jobs'),
-          _NavItem(icon: Icons.history_outlined, activeIcon: Icons.history_rounded, label: 'History'),
-          _NavItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet_rounded, label: 'Earn'),
-          _NavItem(icon: Icons.person_outline, activeIcon: Icons.person_rounded, label: 'Profile'),
+          _NavItem(Icons.home_outlined, Icons.home_rounded, 'Home'),
+          _NavItem(Icons.map_outlined, Icons.map_rounded, 'Jobs'),
+          _NavItem(Icons.history_outlined, Icons.history_rounded, 'History'),
+          _NavItem(Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded, 'Earn'),
+          _NavItem(Icons.person_outline, Icons.person_rounded, 'Profile'),
         ];
     }
   }
@@ -50,76 +46,50 @@ class AppBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = _getNavItems();
-
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       color: Colors.transparent,
       child: Container(
-        height: 70,
+        height: 68,
         decoration: BoxDecoration(
-          color: const Color(0xFF141414),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: const Color(0xFF1E1E1E),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.border, width: 1),
+          boxShadow: [BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 16, offset: const Offset(0, 4),
+          )],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(
-            items.length,
-            (index) => _buildNavIcon(
-              item: items[index],
-              isActive: currentIndex == index,
-              onTap: () => onTap(index),
-            ),
+          children: List.generate(items.length, (i) =>
+            _buildItem(items[i], i == currentIndex, () => onTap(i)),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildNavIcon({
-    required _NavItem item,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildItem(_NavItem item, bool active, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 60,
+        width: 56,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              isActive ? item.activeIcon : item.icon,
-              color: isActive
-                  ? AppColors.accentGreen
-                  : Colors.white.withValues(alpha: 0.4),
-              size: 24,
+              active ? item.activeIcon : item.icon,
+              color: active ? AppColors.primaryGreen : AppColors.textMuted,
+              size: 22,
             ),
             const SizedBox(height: 4),
-            Text(
-              item.label,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 10,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive
-                    ? AppColors.accentGreen
-                    : Colors.white.withValues(alpha: 0.4),
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(item.label, style: TextStyle(
+              fontFamily: 'Inter', fontSize: 10,
+              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+              color: active ? AppColors.primaryGreen : AppColors.textMuted,
+            )),
           ],
         ),
       ),
@@ -128,13 +98,7 @@ class AppBottomNavBar extends StatelessWidget {
 }
 
 class _NavItem {
-  final IconData icon;
-  final IconData activeIcon;
+  final IconData icon, activeIcon;
   final String label;
-
-  _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-  });
+  _NavItem(this.icon, this.activeIcon, this.label);
 }

@@ -13,7 +13,7 @@ class ApiClient {
   final FlutterSecureStorage _secureStorage;
 
   /// Base URL for the API
-  static const String baseUrl = 'https://api.felona.com'; // TODO: Update with actual API URL
+  static const String baseUrl = 'http://localhost:3000';
 
   /// Default timeout duration for requests
   static const Duration timeout = Duration(seconds: 30);

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -33,7 +34,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final _priceController = TextEditingController();
   final _imagePicker = ImagePicker();
   
-  List<XFile> _selectedImages = [];
+  final List<XFile> _selectedImages = [];
   ListingCategory? _selectedCategory;
   final int _maxImages = 5;
 
@@ -213,7 +214,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Create Listing',
+          'Give it a second life',
           style: AppTextStyles.headlineSmall.copyWith(
             color: AppColors.gray900,
           ),
@@ -263,6 +264,18 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Subtitle
+                    const Text(
+                      'Someone out there needs exactly this',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        color: AppColors.textTertiary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
                     // Image Picker Section
                     Text(
                       'Photos',
@@ -389,39 +402,54 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
           }
 
           // Image thumbnail
-          return Container(
-            width: 120,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              image: DecorationImage(
-                image: FileImage(File(_selectedImages[index].path)),
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: GestureDetector(
-                    onTap: () => _removeImage(index),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        size: 16,
-                        color: AppColors.white,
-                      ),
-                    ),
+          return FutureBuilder<Uint8List>(
+            future: _selectedImages[index].readAsBytes(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Container(
+                  width: 120,
+                  margin: const EdgeInsets.only(right: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.gray100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                );
+              }
+              return Container(
+                width: 120,
+                margin: const EdgeInsets.only(right: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  image: DecorationImage(
+                    image: MemoryImage(snapshot.data!),
+                    fit: BoxFit.cover,
                   ),
                 ),
-              ],
-            ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () => _removeImage(index),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: AppColors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           );
         },
       ),

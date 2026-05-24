@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
+import 'package:felo_na/core/constants/spacing.dart';
 
+/// Shimmer skeleton loader for the dark teal theme.
+///
+/// Base color: dark teal card surface
+/// Highlight: slightly lighter teal shimmer sweep
 class SkeletonLoader extends StatefulWidget {
   final double width;
   final double height;
@@ -55,14 +60,14 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: const [
-                AppColors.gray100,
-                AppColors.gray200,
-                AppColors.gray100,
+                AppColors.card, // dark teal base
+                AppColors.cardElevated, // slightly lighter highlight
+                AppColors.card, // back to base
               ],
               stops: [
-                _animation.value - 0.3,
-                _animation.value,
-                _animation.value + 0.3,
+                (_animation.value - 0.3).clamp(0.0, 1.0),
+                _animation.value.clamp(0.0, 1.0),
+                (_animation.value + 0.3).clamp(0.0, 1.0),
               ],
             ),
           ),
@@ -72,6 +77,75 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
   }
 }
 
+/// Card-shaped skeleton for loading states (e.g. dashboard cards, list items)
+class SkeletonCard extends StatelessWidget {
+  final double? height;
+  final double? width;
+  final EdgeInsets? margin;
+
+  const SkeletonCard({
+    super.key,
+    this.height,
+    this.width,
+    this.margin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width ?? double.infinity,
+      height: height ?? 120,
+      margin: margin,
+      padding: Spacing.cardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SkeletonLoader(
+                width: 40,
+                height: 40,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              Spacing.hGap12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonLoader(
+                      width: double.infinity,
+                      height: 14,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    Spacing.gap8,
+                    SkeletonLoader(
+                      width: 120,
+                      height: 12,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          SkeletonLoader(
+            width: double.infinity,
+            height: 12,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// List item skeleton (kept for backward compatibility)
 class SkeletonListItem extends StatelessWidget {
   const SkeletonListItem({super.key});
 

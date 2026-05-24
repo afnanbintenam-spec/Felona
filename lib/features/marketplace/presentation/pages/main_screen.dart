@@ -51,25 +51,18 @@ class _MainScreenState extends State<MainScreen> {
                 : 0;
 
             return Scaffold(
-              backgroundColor: AppColors.black,
+              backgroundColor: AppColors.background,
               body: Stack(
                 children: [
                   IndexedStack(
                     index: _currentIndex,
                     children: screens,
                   ),
-                  // Floating bottom nav
                   Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
+                    left: 0, right: 0, bottom: 0,
                     child: AppBottomNavBar(
                       currentIndex: _currentIndex,
-                      onTap: (index) {
-                        setState(() {
-                          _currentIndex = index;
-                        });
-                      },
+                      onTap: (index) => setState(() => _currentIndex = index),
                       userRole: user.role,
                       notificationCount: notificationCount,
                     ),
@@ -127,37 +120,41 @@ class PlaceholderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.black,
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: AppColors.black,
-        foregroundColor: AppColors.gray900,
-        elevation: 0,
-      ),
+      backgroundColor: AppColors.background,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.construction_rounded,
-              size: 64,
-              color: AppColors.gray400,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.softMint,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.construction_rounded,
+                size: 36,
+                color: AppColors.primaryGreen,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Text(
-              '$title Coming Soon',
+              title,
               style: const TextStyle(
+                fontFamily: 'Inter',
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: AppColors.gray700,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             const Text(
-              'This feature is under development',
+              'Coming soon',
               style: TextStyle(
+                fontFamily: 'Inter',
                 fontSize: 14,
-                color: AppColors.gray500,
+                color: AppColors.textTertiary,
               ),
             ),
           ],
