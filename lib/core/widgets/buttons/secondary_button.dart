@@ -109,15 +109,7 @@ class _SecondaryButtonState extends State<SecondaryButton>
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  // Frosted glass effect with transparent background
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      borderClr.withOpacity(0.1),
-                      borderClr.withOpacity(0.05),
-                    ],
-                  ),
+                  color: borderClr.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(
                     color: borderClr.withOpacity(_isPressed ? 1.0 : 0.8),

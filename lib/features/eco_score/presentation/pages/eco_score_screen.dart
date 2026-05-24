@@ -147,14 +147,7 @@ class _EcoScoreScreenState extends State<EcoScoreScreen>
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(28),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.cardDark,
-                const Color(0xFF0F1A0A), // Dark green tint
-              ],
-            ),
+            color: AppColors.cardDark,
             border: Border.all(
               color: AppColors.accentGreen.withValues(alpha: 0.15),
               width: 1,

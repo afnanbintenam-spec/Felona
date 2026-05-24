@@ -107,6 +107,10 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
         backgroundColor: const Color(0xFF0A0A0A),
         foregroundColor: AppColors.gray900,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
           'Request Pickup',
           style: AppTextStyles.headlineSmall.copyWith(

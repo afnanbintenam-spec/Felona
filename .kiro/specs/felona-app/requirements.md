@@ -1,7 +1,7 @@
 # Requirements Document
 
 ## Introduction
-
+06+
 FeloNa is a Flutter mobile application that connects three types of users in a circular-economy ecosystem: **Normal Users** (sellers / waste generators), **Buyers / Recyclers**, and **Collectors**. Normal Users can list reusable items for sale, request waste pickups, and earn eco points. Buyers can browse the marketplace and send purchase offers. Collectors can accept nearby pickup jobs and track their earnings. The MVP covers authentication, item listings, the offers system, pickup requests, collector acceptance, push notifications, and the eco-score system. Real-time chat, payment gateway, AI waste detection, and live map routing are deferred to a later version.
 
 ---

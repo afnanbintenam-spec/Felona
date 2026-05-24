@@ -198,16 +198,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF4A7A00), // Dark green
-              Color(0xFF8BC34A), // Medium green
-              Color(0xFFCDDC39), // Lime
-              Color(0xFFD9FF00), // Bright lime
-            ],
-          ),
+          color: AppColors.accentGreen,
           boxShadow: [
             BoxShadow(
               color: AppColors.accentGreen.withValues(alpha: 0.2),

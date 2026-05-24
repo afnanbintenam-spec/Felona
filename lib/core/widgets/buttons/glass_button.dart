@@ -111,17 +111,8 @@ class _GlassButtonState extends State<GlassButton>
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  // Frosted glass effect
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      (widget.glassColor ?? AppColors.primary500)
-                          .withOpacity(0.15),
-                      (widget.glassColor ?? AppColors.primary500)
-                          .withOpacity(0.05),
-                    ],
-                  ),
+                  color: (widget.glassColor ?? AppColors.primary500)
+                      .withOpacity(0.1),
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(
                     color: (widget.borderColor ?? AppColors.primary500)
@@ -216,15 +207,7 @@ class GlassButtonPrimary extends StatelessWidget {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                // Solid lime with glass overlay
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primary500,
-                    AppColors.primary500.withOpacity(0.9),
-                  ],
-                ),
+                color: AppColors.primary500,
                 borderRadius: BorderRadius.circular(100),
                 border: Border.all(
                   color: AppColors.primary500.withOpacity(0.3),

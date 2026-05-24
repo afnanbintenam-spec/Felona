@@ -28,15 +28,12 @@ class StatCard extends StatelessWidget {
         height: 100,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              color.withOpacity(0.1),
-              color.withOpacity(0.2),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withOpacity(0.15),
+            width: 1,
+          ),
         ),
         child: Stack(
           children: [

@@ -111,15 +111,7 @@ class _PrimaryButtonState extends State<PrimaryButton>
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  // Solid color with subtle glass overlay
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      bgColor,
-                      bgColor.withOpacity(0.95),
-                    ],
-                  ),
+                  color: bgColor,
                   borderRadius: BorderRadius.circular(100),
                   border: Border.all(
                     color: bgColor.withOpacity(0.3),
