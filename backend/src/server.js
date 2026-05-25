@@ -13,6 +13,7 @@ const authRoutes = require('./routes/auth');
 const listingsRoutes = require('./routes/listings');
 const pickupsRoutes = require('./routes/pickups');
 const ecoRoutes = require('./routes/eco');
+const aiRoutes = require('./routes/ai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +37,7 @@ app.use('/auth', authRoutes);
 app.use('/listings', listingsRoutes);
 app.use('/pickups', pickupsRoutes);
 app.use('/eco', ecoRoutes);
+app.use('/ai', aiRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

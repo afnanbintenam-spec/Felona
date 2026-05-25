@@ -8,8 +8,10 @@ import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 import 'package:felo_na/features/notifications/presentation/bloc/notifications_bloc.dart';
 import 'package:felo_na/features/notifications/presentation/bloc/notifications_state.dart';
 import 'package:felo_na/features/marketplace/presentation/pages/dashboard_screen.dart';
+import 'package:felo_na/features/marketplace/presentation/pages/buyer_dashboard_screen.dart';
 import 'package:felo_na/features/marketplace/presentation/pages/marketplace_screen.dart';
 import 'package:felo_na/features/pickup/presentation/pages/next_collection_screen.dart';
+import 'package:felo_na/features/pickup/presentation/pages/collector_dashboard_screen.dart';
 import 'package:felo_na/features/eco_score/presentation/pages/eco_score_screen.dart';
 import 'package:felo_na/features/auth/presentation/pages/profile_screen.dart';
 
@@ -89,7 +91,7 @@ class _MainScreenState extends State<MainScreen> {
 
       case UserRole.buyer:
         return [
-          const DashboardScreen(), // Home
+          const BuyerDashboardScreen(), // Home
           const MarketplaceScreen(), // Search
           const PlaceholderScreen(title: 'My Offers'), // My Offers
           const PlaceholderScreen(title: 'Messages'), // Messages
@@ -98,7 +100,7 @@ class _MainScreenState extends State<MainScreen> {
 
       case UserRole.collector:
         return [
-          const DashboardScreen(), // Home
+          const CollectorDashboardScreen(), // Home
           const PlaceholderScreen(title: 'Jobs'), // Jobs
           const PlaceholderScreen(title: 'History'), // History
           const PlaceholderScreen(title: 'Earnings'), // Earnings

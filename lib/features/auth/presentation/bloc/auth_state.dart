@@ -44,6 +44,16 @@ class AuthError extends AuthState {
   List<Object?> get props => [message];
 }
 
+/// State when registration succeeded but email verification is required.
+class EmailVerificationRequired extends AuthState {
+  final String email;
+
+  const EmailVerificationRequired({required this.email});
+
+  @override
+  List<Object?> get props => [email];
+}
+
 /// State when profile is successfully updated.
 class ProfileUpdated extends AuthState {
   final User user;

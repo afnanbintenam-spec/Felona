@@ -37,6 +37,16 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (ctx, state) {
           if (state is Authenticated) Navigator.pushReplacementNamed(ctx, '/main');
+          if (state is EmailVerificationRequired) {
+            Navigator.pushNamed(
+              ctx,
+              '/otp',
+              arguments: {
+                'email': state.email,
+                'purpose': 'email_verification',
+              },
+            );
+          }
           if (state is AuthError) ScaffoldMessenger.of(ctx).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
           );
@@ -77,6 +87,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: true, showPasswordToggle: true,
                       validator: (v) => v == null || v.length < 8 ? 'Min 8 chars' : null,
                       prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textTertiary, size: 20),
+                    ),
+                    Spacing.gap12,
+                    // Forgot password
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pushNamed(context, '/forgot-password'),
+                        child: const Text('Forgot password?', style: TextStyle(
+                          fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500,
+                          color: AppColors.primaryGreen,
+                        )),
+                      ),
                     ),
                     Spacing.gap24,
                     // Sign in button

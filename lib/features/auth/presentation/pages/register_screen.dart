@@ -114,6 +114,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         listener: (context, state) {
           if (state is Authenticated) {
             Navigator.pushReplacementNamed(context, '/main');
+          } else if (state is EmailVerificationRequired) {
+            // Navigate to OTP verification with email
+            Navigator.pushReplacementNamed(
+              context,
+              '/otp',
+              arguments: {
+                'email': state.email,
+                'purpose': 'email_verification',
+              },
+            );
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

@@ -16,6 +16,10 @@ import 'package:felo_na/features/auth/presentation/pages/onboarding_screen.dart'
 import 'package:felo_na/features/auth/presentation/pages/login_screen.dart';
 import 'package:felo_na/features/auth/presentation/pages/register_screen.dart';
 import 'package:felo_na/features/auth/presentation/pages/profile_screen.dart';
+import 'package:felo_na/features/auth/presentation/pages/forgot_password_screen.dart';
+import 'package:felo_na/features/auth/presentation/pages/otp_screen.dart';
+import 'package:felo_na/features/auth/presentation/pages/reset_password_screen.dart';
+import 'package:felo_na/features/auth/presentation/pages/change_password_screen.dart';
 
 // AI screens
 import 'package:felo_na/features/ai/presentation/pages/waste_scanner_screen.dart';
@@ -35,6 +39,7 @@ import 'package:felo_na/features/pickup/presentation/pages/create_pickup_screen.
 
 // Eco Score screens
 import 'package:felo_na/features/eco_score/presentation/pages/eco_score_screen.dart';
+import 'package:felo_na/features/eco_score/presentation/pages/leaderboard_screen.dart';
 
 // Notification screens
 import 'package:felo_na/features/notifications/presentation/pages/notifications_screen.dart';
@@ -71,6 +76,28 @@ class FeloNaApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         initialRoute: '/',
+        onGenerateRoute: (settings) {
+          // Routes that need arguments
+          switch (settings.name) {
+            case '/otp':
+              final args = settings.arguments as Map<String, dynamic>? ?? {};
+              return MaterialPageRoute(
+                builder: (_) => OtpScreen(
+                  email: args['email'] ?? '',
+                  purpose: args['purpose'] ?? 'email_verification',
+                ),
+              );
+            case '/reset-password':
+              final args = settings.arguments as Map<String, dynamic>? ?? {};
+              return MaterialPageRoute(
+                builder: (_) => ResetPasswordScreen(
+                  resetToken: args['reset_token'] ?? '',
+                ),
+              );
+            default:
+              return null;
+          }
+        },
         routes: {
           '/': (context) => const SplashScreen(),
           '/onboarding': (context) => const OnboardingScreen(),
@@ -89,6 +116,9 @@ class FeloNaApp extends StatelessWidget {
           '/profile': (context) => const ProfileScreen(),
           '/waste-scanner': (context) => const WasteScannerScreen(),
           '/recycling-chat': (context) => const RecyclingChatScreen(),
+          '/forgot-password': (context) => const ForgotPasswordScreen(),
+          '/change-password': (context) => const ChangePasswordScreen(),
+          '/leaderboard': (context) => const LeaderboardScreen(),
         },
       ),
     );
