@@ -30,15 +30,17 @@ class UserModel extends User {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'] as String,
-      fullName: json['full_name'] as String,
+      fullName: (json['full_name'] ?? json['fullName']) as String,
       email: json['email'] as String,
       role: _parseUserRole(json['role'] as String),
-      phoneNumber: json['phone_number'] as String?,
-      profilePictureUrl: json['profile_picture_url'] as String?,
-      ecoPoints: (json['eco_points'] as num?)?.toInt() ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
+      phoneNumber: (json['phone_number'] ?? json['phoneNumber']) as String?,
+      profilePictureUrl: (json['profile_picture_url'] ?? json['profilePictureUrl']) as String?,
+      ecoPoints: (json['eco_points'] ?? json['ecoPoints'] as num?)?.toInt() ?? 0,
+      createdAt: DateTime.parse(
+        (json['created_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()) as String,
+      ),
+      updatedAt: (json['updated_at'] ?? json['updatedAt']) != null
+          ? DateTime.parse((json['updated_at'] ?? json['updatedAt']) as String)
           : null,
     );
   }

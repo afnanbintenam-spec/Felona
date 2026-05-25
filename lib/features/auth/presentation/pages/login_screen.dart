@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Spacing.gap40,
-                    Center(child: Image.asset('Assets/mainLogo.png', width: 100, height: 100)),
+                    Center(child: Image.asset('Assets/mainLogo.png', width: 160, height: 160)),
                     Spacing.gap32,
                     const Text('Welcome back', textAlign: TextAlign.center, style: TextStyle(
                       fontFamily: 'Inter', fontSize: 24, fontWeight: FontWeight.w700,

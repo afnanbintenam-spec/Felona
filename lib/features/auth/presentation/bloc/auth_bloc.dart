@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/network/api_client.dart';
 import 'package:felo_na/core/network/auth_interceptor.dart';
+import 'package:felo_na/core/network/web_storage.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_event.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 import 'package:felo_na/features/auth/data/models/user_model.dart';
@@ -10,16 +12,18 @@ import 'package:felo_na/features/auth/data/models/user_model.dart';
 /// AuthBloc — backend-wired with OTP-required registration & token refresh
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final Dio _dio;
-  final FlutterSecureStorage _storage;
+  final AppStorage _storage;
 
-  AuthBloc({Dio? dio, FlutterSecureStorage? storage})
+  AuthBloc({Dio? dio, AppStorage? storage})
       : _dio = dio ??
             Dio(BaseOptions(
               baseUrl: ApiClient.baseUrl,
               headers: {'Content-Type': 'application/json'},
+              connectTimeout: const Duration(seconds: 30),
+              receiveTimeout: const Duration(seconds: 30),
               validateStatus: (s) => s != null && s < 500,
             )),
-        _storage = storage ?? const FlutterSecureStorage(),
+        _storage = storage ?? AppStorage(),
         super(const AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheck);
     on<LoginRequested>(_onLogin);
@@ -43,19 +47,32 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final response = await _dio.get('/auth/me',
           options: Options(headers: {'Authorization': 'Bearer $token'}));
 
+      Map<String, dynamic> responseData;
+      if (response.data is String) {
+        responseData = json.decode(response.data as String) as Map<String, dynamic>;
+      } else {
+        responseData = response.data as Map<String, dynamic>;
+      }
+
       if (response.statusCode == 200) {
-        final user = UserModel.fromJson(response.data['user']);
+        final user = UserModel.fromJson(responseData['user'] as Map<String, dynamic>);
         emit(Authenticated(user: user));
       } else if (response.statusCode == 401) {
-        // Token expired — try refresh
         final refreshed = await _tryRefreshToken();
         if (refreshed) {
-          // Retry with new token
           final newToken = await _storage.read(key: TokenKeys.accessToken);
           final retryResponse = await _dio.get('/auth/me',
               options: Options(headers: {'Authorization': 'Bearer $newToken'}));
+          
+          Map<String, dynamic> retryData;
+          if (retryResponse.data is String) {
+            retryData = json.decode(retryResponse.data as String) as Map<String, dynamic>;
+          } else {
+            retryData = retryResponse.data as Map<String, dynamic>;
+          }
+          
           if (retryResponse.statusCode == 200) {
-            final user = UserModel.fromJson(retryResponse.data['user']);
+            final user = UserModel.fromJson(retryData['user'] as Map<String, dynamic>);
             emit(Authenticated(user: user));
           } else {
             await _clearTokens();
@@ -78,43 +95,61 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogin(LoginRequested event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     try {
+      debugPrint('[AuthBloc] Attempting login to ${ApiClient.baseUrl}/auth/login');
+      
       final response = await _dio.post('/auth/login', data: {
         'email': event.email,
         'password': event.password,
       });
 
-      if (response.statusCode == 200) {
-        // Store access token (supports both 'token' and 'accessToken' keys)
-        final accessToken = (response.data['token'] ??
-            response.data['accessToken'] ??
-            response.data['access_token']) as String;
-        await _storage.write(key: TokenKeys.accessToken, value: accessToken);
+      debugPrint('[AuthBloc] Login response status: ${response.statusCode}');
+      debugPrint('[AuthBloc] Login response data type: ${response.data.runtimeType}');
 
-        // Store refresh token if provided
-        final refreshToken = response.data['refreshToken'] ??
-            response.data['refresh_token'];
-        if (refreshToken != null) {
-          await _storage.write(
-              key: TokenKeys.refreshToken, value: refreshToken as String);
+      // Parse response data — on web it might come as String
+      Map<String, dynamic> responseData;
+      if (response.data is String) {
+        responseData = json.decode(response.data as String) as Map<String, dynamic>;
+      } else {
+        responseData = response.data as Map<String, dynamic>;
+      }
+
+      if (response.statusCode == 200) {
+        final accessToken = responseData['token']?.toString() ??
+            responseData['accessToken']?.toString() ??
+            responseData['access_token']?.toString();
+        
+        if (accessToken == null || accessToken.isEmpty) {
+          emit(const AuthError(message: 'No token received from server'));
+          return;
         }
 
-        final user = UserModel.fromJson(response.data['user']);
+        debugPrint('[AuthBloc] Got token, storing...');
+        await _storage.write(key: TokenKeys.accessToken, value: accessToken);
+
+        final refreshToken = responseData['refreshToken']?.toString() ??
+            responseData['refresh_token']?.toString();
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          await _storage.write(key: TokenKeys.refreshToken, value: refreshToken);
+        }
+
+        final user = UserModel.fromJson(responseData['user'] as Map<String, dynamic>);
+        debugPrint('[AuthBloc] Login successful for ${user.email}');
         emit(Authenticated(user: user));
       } else if (response.statusCode == 403 &&
-          response.data['requires_verification'] == true) {
-        // Email not verified — direct user to OTP
+          responseData['requires_verification'] == true) {
         emit(EmailVerificationRequired(
-          email: response.data['email'] ?? event.email,
+          email: (responseData['email'] ?? event.email).toString(),
         ));
       } else {
         emit(AuthError(
-            message: response.data?['message']?.toString() ??
-                response.data?['error']?.toString() ??
+            message: responseData['message']?.toString() ??
+                responseData['error']?.toString() ??
                 'Login failed'));
       }
-    } catch (e) {
-      emit(const AuthError(
-          message: 'Connection error. Is the server running?'));
+    } catch (e, stackTrace) {
+      debugPrint('[AuthBloc] Login error: $e');
+      debugPrint('[AuthBloc] Stack: $stackTrace');
+      emit(AuthError(message: 'Login failed: ${e.toString()}'));
     }
   }
 
@@ -133,17 +168,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         'role': roleStr,
       });
 
+      Map<String, dynamic> responseData;
+      if (response.data is String) {
+        responseData = json.decode(response.data as String) as Map<String, dynamic>;
+      } else {
+        responseData = response.data as Map<String, dynamic>;
+      }
+
       if (response.statusCode == 201 || response.statusCode == 200) {
-        // Registration sends OTP — must verify before login
         emit(EmailVerificationRequired(email: event.email));
       } else {
         emit(AuthError(
             message:
-                response.data?['error']?.toString() ?? 'Registration failed'));
+                responseData['error']?.toString() ?? 'Registration failed'));
       }
     } catch (e) {
-      emit(const AuthError(
-          message: 'Connection error. Is the server running?'));
+      debugPrint('[AuthBloc] Register error: $e');
+      emit(AuthError(message: 'Registration failed: ${e.toString()}'));
     }
   }
 
@@ -168,8 +209,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       final response = await _dio.put('/auth/profile/${currentUser.id}',
           data: data,
-          options:
-              Options(headers: {'Authorization': 'Bearer $token'}));
+          options: Options(headers: {'Authorization': 'Bearer $token'}));
 
       if (response.statusCode == 200) {
         final user = UserModel.fromJson(response.data['user']);
@@ -205,13 +245,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  /// Handles successful OTP email verification.
-  /// Stores token and emits Authenticated state.
   Future<void> _onVerificationCompleted(
       VerificationCompleted event, Emitter<AuthState> emit) async {
     await _storage.write(key: TokenKeys.accessToken, value: event.token);
 
-    // Store refresh token if provided
     if (event.refreshToken != null) {
       await _storage.write(
           key: TokenKeys.refreshToken, value: event.refreshToken!);
@@ -221,7 +258,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(Authenticated(user: user));
   }
 
-  /// Attempts to refresh the access token.
   Future<bool> _tryRefreshToken() async {
     try {
       final refreshToken = await _storage.read(key: TokenKeys.refreshToken);
@@ -262,7 +298,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  /// Clears all stored tokens.
   Future<void> _clearTokens() async {
     await _storage.delete(key: TokenKeys.accessToken);
     await _storage.delete(key: TokenKeys.refreshToken);
