@@ -67,8 +67,8 @@ const start = async () => {
     await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
     console.log('✅ Models synced');
 
-    app.listen(PORT, () => {
-      console.log(`🚀 FeloNa API running on http://localhost:${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 FeloNa API running on http://0.0.0.0:${PORT}`);
       console.log(`📋 Environment: ${process.env.NODE_ENV}`);
     });
   } catch (error) {

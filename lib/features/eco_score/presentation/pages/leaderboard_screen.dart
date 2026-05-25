@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
+import 'package:felo_na/core/network/api_client.dart';
 
 /// Leaderboard Screen — top eco warriors
 class LeaderboardScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class LeaderboardScreen extends StatefulWidget {
 }
 
 class _LeaderboardScreenState extends State<LeaderboardScreen> {
-  final _dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'));
+  final _dio = Dio(BaseOptions(baseUrl: ApiClient.baseUrl));
   final _storage = const FlutterSecureStorage();
 
   List<dynamic> _leaderboard = [];

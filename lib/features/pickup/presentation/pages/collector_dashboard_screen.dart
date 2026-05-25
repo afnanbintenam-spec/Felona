@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
+import 'package:felo_na/core/network/api_client.dart';
 
 /// Collector Dashboard — Role-specific home screen for collectors
 class CollectorDashboardScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class CollectorDashboardScreen extends StatefulWidget {
 }
 
 class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
-  final _dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'));
+  final _dio = Dio(BaseOptions(baseUrl: ApiClient.baseUrl));
   final _storage = const FlutterSecureStorage();
 
   int _availablePickups = 0;

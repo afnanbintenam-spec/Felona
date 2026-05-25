@@ -5,7 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
+import 'package:felo_na/core/network/api_client.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:felo_na/features/auth/presentation/bloc/auth_event.dart';
 
 /// OTP Verification Screen — 6-digit code input
 /// Purposes: 'email_verification' (after register/login) or 'password_reset'
@@ -25,7 +27,8 @@ class OtpScreen extends StatefulWidget {
 
 class _OtpScreenState extends State<OtpScreen> {
   final _dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost:3000',
+    baseUrl: ApiClient.baseUrl,
+    headers: {'Content-Type': 'application/json'},
     validateStatus: (s) => s != null && s < 500,
   ));
   final List<TextEditingController> _controllers =
@@ -36,6 +39,7 @@ class _OtpScreenState extends State<OtpScreen> {
   bool _canResend = false;
   int _secondsRemaining = 30;
   Timer? _timer;
+  bool _autoVerifyTriggered = false;
 
   bool get _isVerification => widget.purpose == 'email_verification';
 
@@ -98,14 +102,19 @@ class _OtpScreenState extends State<OtpScreen> {
 
       if (response.statusCode == 200) {
         if (_isVerification) {
-          // Email verified — got user + token
+          // Email verified — got user + tokens
           final token = response.data['token'] as String;
+          final refreshToken = response.data['refreshToken'] as String?;
           final userJson = response.data['user'] as Map<String, dynamic>;
 
-          // Update bloc state to Authenticated
-          await context
-              .read<AuthBloc>()
-              .setAuthenticatedFromVerification(token: token, userJson: userJson);
+          // Dispatch event to AuthBloc (proper pattern)
+          context.read<AuthBloc>().add(
+                VerificationCompleted(
+                  token: token,
+                  refreshToken: refreshToken,
+                  userJson: userJson,
+                ),
+              );
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -124,7 +133,9 @@ class _OtpScreenState extends State<OtpScreen> {
           );
         }
       } else {
-        final msg = response.data['error']?.toString() ?? 'Verification failed';
+        final msg = response.data['message']?.toString() ??
+            response.data['error']?.toString() ??
+            'Invalid verification code';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), backgroundColor: AppColors.error),
         );
@@ -170,7 +181,9 @@ class _OtpScreenState extends State<OtpScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response.data['error']?.toString() ?? 'Failed to resend'),
+            content: Text(response.data['message']?.toString() ??
+                response.data['error']?.toString() ??
+                'Failed to resend'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -195,9 +208,12 @@ class _OtpScreenState extends State<OtpScreen> {
     }
     setState(() {});
 
-    // Auto-verify when all 6 digits entered
-    if (_otp.length == 6 && !_loading) {
+    // Auto-verify when all 6 digits entered (with guard against duplicate calls)
+    if (_otp.length == 6 && !_loading && !_autoVerifyTriggered) {
+      _autoVerifyTriggered = true;
       _verifyOtp();
+    } else if (_otp.length < 6) {
+      _autoVerifyTriggered = false;
     }
   }
 
@@ -337,17 +353,6 @@ class _OtpScreenState extends State<OtpScreen> {
                 ),
               ),
               Spacing.gap16,
-              // Note for dev mode
-              const Text(
-                'In dev mode, check the backend terminal for your OTP code.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  color: AppColors.textMuted,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
             ],
           ),
         ),

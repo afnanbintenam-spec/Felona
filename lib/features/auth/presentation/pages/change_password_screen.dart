@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
 import 'package:felo_na/core/widgets/inputs/custom_text_field.dart';
+import 'package:felo_na/core/network/api_client.dart';
 
 /// Change Password Screen — for authenticated users
 class ChangePasswordScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'));
+  final _dio = Dio(BaseOptions(baseUrl: ApiClient.baseUrl));
   final _storage = const FlutterSecureStorage();
   bool _loading = false;
 

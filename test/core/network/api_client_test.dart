@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:felo_na/core/network/api_client.dart';
+import 'package:felo_na/core/network/auth_interceptor.dart';
 import 'package:felo_na/core/errors/exceptions.dart';
 
 void main() {
@@ -21,7 +22,7 @@ void main() {
     });
 
     test('should configure Dio with correct base URL', () {
-      expect(ApiClient.baseUrl, 'https://api.felona.com');
+      expect(ApiClient.baseUrl, contains(':3000'));
     });
 
     test('should have correct timeout duration', () {
@@ -410,9 +411,10 @@ void main() {
     });
   });
 
-  group('AuthInterceptor', () {
-    test('should have correct token key constant', () {
-      expect(AuthInterceptor.tokenKey, 'auth_token');
+  group('AuthRefreshInterceptor', () {
+    test('should have correct token key constants', () {
+      expect(TokenKeys.accessToken, 'auth_token');
+      expect(TokenKeys.refreshToken, 'refresh_token');
     });
   });
 

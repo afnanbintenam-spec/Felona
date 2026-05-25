@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
+import 'package:felo_na/core/network/api_client.dart';
 
 /// AI Waste Scanner — Backend-powered with eco impact engine
 /// Uses /ai/scan endpoint which returns full analysis + saves to DB
@@ -16,7 +17,7 @@ class WasteScannerScreen extends StatefulWidget {
 }
 
 class _WasteScannerScreenState extends State<WasteScannerScreen> {
-  final _dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'));
+  final _dio = Dio(BaseOptions(baseUrl: ApiClient.baseUrl));
   final _storage = const FlutterSecureStorage();
   final _picker = ImagePicker();
 

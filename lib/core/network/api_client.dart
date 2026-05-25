@@ -1,19 +1,33 @@
+import 'dart:io' show Platform;
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../errors/exceptions.dart';
+import 'auth_interceptor.dart';
 
 /// Centralized HTTP client for making API requests.
 ///
 /// Provides a configured Dio instance with interceptors for:
-/// - Authentication (JWT token injection)
+/// - Authentication (JWT token injection + auto refresh)
 /// - Request/response logging
 /// - Error transformation
 class ApiClient {
   final Dio _dio;
   final FlutterSecureStorage _secureStorage;
 
-  /// Base URL for the API
-  static const String baseUrl = 'http://localhost:3000';
+  /// Callback triggered when token refresh fails and user must re-login.
+  void Function()? onForceLogout;
+
+  /// Base URL for the API.
+  /// - Android emulator: 10.0.2.2 maps to host machine's localhost
+  /// - iOS simulator / Web / Desktop: localhost works directly
+  /// - Physical device: uses machine's LAN IP
+  static String get baseUrl {
+    if (kIsWeb) return 'http://localhost:3000';
+    if (Platform.isAndroid) return 'http://192.168.0.234:3000';
+    return 'http://localhost:3000';
+  }
 
   /// Default timeout duration for requests
   static const Duration timeout = Duration(seconds: 30);
@@ -21,6 +35,7 @@ class ApiClient {
   ApiClient({
     required FlutterSecureStorage secureStorage,
     Dio? dio,
+    this.onForceLogout,
   })  : _secureStorage = secureStorage,
         _dio = dio ?? Dio() {
     _configureDio();
@@ -39,9 +54,14 @@ class ApiClient {
       },
     );
 
-    // Add interceptors in order: Auth -> Logging -> Error
+    // Add interceptors in order: Auth (with refresh) -> Logging -> Error
     _dio.interceptors.addAll([
-      AuthInterceptor(_secureStorage),
+      AuthRefreshInterceptor(
+        dio: _dio,
+        storage: _secureStorage,
+        baseUrl: baseUrl,
+        onForceLogout: () => onForceLogout?.call(),
+      ),
       LoggingInterceptor(),
       ErrorInterceptor(),
     ]);
@@ -133,41 +153,6 @@ class ApiClient {
       options: options,
       onSendProgress: onSendProgress,
     );
-  }
-}
-
-/// Interceptor that injects JWT tokens into request headers.
-///
-/// Retrieves the stored JWT token and adds it to the Authorization header
-/// for all outgoing requests.
-class AuthInterceptor extends Interceptor {
-  final FlutterSecureStorage _secureStorage;
-
-  /// Key used to store the JWT token in secure storage
-  static const String tokenKey = 'auth_token';
-
-  AuthInterceptor(this._secureStorage);
-
-  @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) async {
-    try {
-      // Retrieve JWT token from secure storage
-      final token = await _secureStorage.read(key: tokenKey);
-
-      // If token exists, add it to the Authorization header
-      if (token != null && token.isNotEmpty) {
-        options.headers['Authorization'] = 'Bearer $token';
-      }
-
-      handler.next(options);
-    } catch (e) {
-      // If token retrieval fails, continue without token
-      // This allows unauthenticated requests (login, register) to proceed
-      handler.next(options);
-    }
   }
 }
 

@@ -9,11 +9,24 @@ const { sendOtpEmail } = require('../services/emailService');
 
 const router = express.Router();
 
-// Generate JWT
-const generateToken = (userId) =>
+// ─── TOKEN GENERATION ───────────────────────────────────────────
+// Short-lived access token (1 hour)
+const generateAccessToken = (userId) =>
   jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '30d',
+    expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '1h',
   });
+
+// Long-lived refresh token (30 days)
+const generateRefreshToken = (userId) =>
+  jwt.sign({ userId, type: 'refresh' }, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
+  });
+
+// Helper: generate both tokens
+const generateTokenPair = (userId) => ({
+  token: generateAccessToken(userId),
+  refreshToken: generateRefreshToken(userId),
+});
 
 // Generate 6-digit OTP
 const generateOtp = () => crypto.randomInt(100000, 999999).toString();
@@ -134,12 +147,13 @@ router.post('/verify-email', [
     await user.increment('eco_points', { by: 50 });
     await user.reload();
 
-    // Issue auth token
-    const token = generateToken(user.id);
+    // Issue auth tokens
+    const { token, refreshToken } = generateTokenPair(user.id);
     res.json({
       message: 'Email verified! Welcome to FeloNa 🌱',
       user: user.toJSON(),
       token,
+      refreshToken,
     });
   } catch (error) {
     console.error('Verify email error:', error);
@@ -215,11 +229,51 @@ router.post('/login', [
       });
     }
 
-    const token = generateToken(user.id);
-    res.json({ user: user.toJSON(), token });
+    const { token, refreshToken } = generateTokenPair(user.id);
+    res.json({ user: user.toJSON(), token, refreshToken });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// ─── REFRESH TOKEN ──────────────────────────────────────────────
+// Exchange a valid refresh token for a new access + refresh token pair
+router.post('/refresh', [
+  body('refresh_token').notEmpty(),
+], async (req, res) => {
+  try {
+    const { refresh_token } = req.body;
+
+    // Verify the refresh token
+    const decoded = jwt.verify(
+      refresh_token,
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+    );
+
+    if (decoded.type !== 'refresh') {
+      return res.status(401).json({ error: 'Invalid token type' });
+    }
+
+    // Check user still exists and is active
+    const user = await User.findByPk(decoded.userId);
+    if (!user || !user.is_active) {
+      return res.status(401).json({ error: 'User not found or inactive' });
+    }
+
+    // Issue new token pair (rotation — old refresh token is now invalid by design)
+    const { token, refreshToken } = generateTokenPair(user.id);
+    res.json({
+      token,
+      accessToken: token,
+      refreshToken,
+      refresh_token: refreshToken,
+    });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Refresh token expired. Please login again.' });
+    }
+    return res.status(401).json({ error: 'Invalid refresh token' });
   }
 });
 

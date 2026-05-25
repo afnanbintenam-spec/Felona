@@ -1,16 +1,17 @@
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
-// For development: use Ethereal (fake SMTP) or Gmail
-// For production: use SendGrid, Mailgun, or AWS SES
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.SMTP_EMAIL || 'felona.app.otp@gmail.com',
-    pass: process.env.SMTP_PASSWORD || 'your_app_password_here',
-  },
-});
+// Create transporter using Gmail with App Password
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.SMTP_EMAIL,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  });
+};
 
-// Fallback: If Gmail isn't configured, log OTP to console (dev mode)
 const sendOtpEmail = async (email, otp, purpose) => {
   const subject = purpose === 'password_reset'
     ? 'FeloNa — Reset Your Password'
@@ -29,23 +30,24 @@ const sendOtpEmail = async (email, otp, purpose) => {
   `;
 
   try {
+    const transporter = createTransporter();
     await transporter.sendMail({
-      from: '"FeloNa" <felona.app.otp@gmail.com>',
+      from: `"FeloNa" <${process.env.SMTP_EMAIL}>`,
       to: email,
       subject,
       html,
     });
-    console.log(`📧 OTP sent to ${email}`);
+    console.log(`📧 OTP sent successfully to ${email}`);
     return true;
   } catch (error) {
-    // In development, just log the OTP
+    console.error(`❌ Email send failed:`, error.message);
     console.log(`\n📧 ═══════════════════════════════════════`);
     console.log(`   EMAIL: ${email}`);
     console.log(`   OTP: ${otp}`);
     console.log(`   PURPOSE: ${purpose}`);
-    console.log(`   (Email sending failed — using console fallback)`);
+    console.log(`   ERROR: ${error.message}`);
     console.log(`═══════════════════════════════════════════\n`);
-    return true; // Still return true so the flow continues
+    return true;
   }
 };
 

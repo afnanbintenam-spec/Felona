@@ -1,21 +1,21 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:felo_na/core/network/api_client.dart';
+import 'package:felo_na/core/network/auth_interceptor.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_event.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 import 'package:felo_na/features/auth/data/models/user_model.dart';
 
-/// AuthBloc — backend-wired with OTP-required registration
+/// AuthBloc — backend-wired with OTP-required registration & token refresh
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final Dio _dio;
   final FlutterSecureStorage _storage;
-  static const _baseUrl = 'http://localhost:3000';
-  static const _tokenKey = 'auth_token';
 
   AuthBloc({Dio? dio, FlutterSecureStorage? storage})
       : _dio = dio ??
             Dio(BaseOptions(
-              baseUrl: _baseUrl,
+              baseUrl: ApiClient.baseUrl,
               headers: {'Content-Type': 'application/json'},
               validateStatus: (s) => s != null && s < 500,
             )),
@@ -27,13 +27,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutRequested>(_onLogout);
     on<UpdateProfileRequested>(_onUpdateProfile);
     on<UploadProfilePictureRequested>(_onUploadPicture);
+    on<VerificationCompleted>(_onVerificationCompleted);
   }
 
   Future<void> _onAuthCheck(
       AuthCheckRequested event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
     try {
-      final token = await _storage.read(key: _tokenKey);
+      final token = await _storage.read(key: TokenKeys.accessToken);
       if (token == null || token.isEmpty) {
         emit(const Unauthenticated());
         return;
@@ -45,12 +46,31 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (response.statusCode == 200) {
         final user = UserModel.fromJson(response.data['user']);
         emit(Authenticated(user: user));
+      } else if (response.statusCode == 401) {
+        // Token expired — try refresh
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          // Retry with new token
+          final newToken = await _storage.read(key: TokenKeys.accessToken);
+          final retryResponse = await _dio.get('/auth/me',
+              options: Options(headers: {'Authorization': 'Bearer $newToken'}));
+          if (retryResponse.statusCode == 200) {
+            final user = UserModel.fromJson(retryResponse.data['user']);
+            emit(Authenticated(user: user));
+          } else {
+            await _clearTokens();
+            emit(const Unauthenticated());
+          }
+        } else {
+          await _clearTokens();
+          emit(const Unauthenticated());
+        }
       } else {
-        await _storage.delete(key: _tokenKey);
+        await _clearTokens();
         emit(const Unauthenticated());
       }
     } catch (_) {
-      await _storage.delete(key: _tokenKey);
+      await _clearTokens();
       emit(const Unauthenticated());
     }
   }
@@ -64,8 +84,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       });
 
       if (response.statusCode == 200) {
-        final token = response.data['token'] as String;
-        await _storage.write(key: _tokenKey, value: token);
+        // Store access token (supports both 'token' and 'accessToken' keys)
+        final accessToken = (response.data['token'] ??
+            response.data['accessToken'] ??
+            response.data['access_token']) as String;
+        await _storage.write(key: TokenKeys.accessToken, value: accessToken);
+
+        // Store refresh token if provided
+        final refreshToken = response.data['refreshToken'] ??
+            response.data['refresh_token'];
+        if (refreshToken != null) {
+          await _storage.write(
+              key: TokenKeys.refreshToken, value: refreshToken as String);
+        }
+
         final user = UserModel.fromJson(response.data['user']);
         emit(Authenticated(user: user));
       } else if (response.statusCode == 403 &&
@@ -76,7 +108,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         ));
       } else {
         emit(AuthError(
-            message: response.data?['error']?.toString() ?? 'Login failed'));
+            message: response.data?['message']?.toString() ??
+                response.data?['error']?.toString() ??
+                'Login failed'));
       }
     } catch (e) {
       emit(const AuthError(
@@ -116,7 +150,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogout(
       LogoutRequested event, Emitter<AuthState> emit) async {
     emit(const AuthLoading());
-    await _storage.delete(key: _tokenKey);
+    await _clearTokens();
     emit(const Unauthenticated());
   }
 
@@ -127,7 +161,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthLoading());
 
     try {
-      final token = await _storage.read(key: _tokenKey);
+      final token = await _storage.read(key: TokenKeys.accessToken);
       final data = <String, dynamic>{};
       if (event.fullName != null) data['full_name'] = event.fullName;
       if (event.phoneNumber != null) data['phone_number'] = event.phoneNumber;
@@ -171,14 +205,74 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  /// Public method called from OTP screen after successful email verification.
-  /// Stores token + emits Authenticated state.
+  /// Handles successful OTP email verification.
+  /// Stores token and emits Authenticated state.
+  Future<void> _onVerificationCompleted(
+      VerificationCompleted event, Emitter<AuthState> emit) async {
+    await _storage.write(key: TokenKeys.accessToken, value: event.token);
+
+    // Store refresh token if provided
+    if (event.refreshToken != null) {
+      await _storage.write(
+          key: TokenKeys.refreshToken, value: event.refreshToken!);
+    }
+
+    final user = UserModel.fromJson(event.userJson);
+    emit(Authenticated(user: user));
+  }
+
+  /// Attempts to refresh the access token.
+  Future<bool> _tryRefreshToken() async {
+    try {
+      final refreshToken = await _storage.read(key: TokenKeys.refreshToken);
+      if (refreshToken == null || refreshToken.isEmpty) return false;
+
+      final refreshDio = Dio(BaseOptions(
+        baseUrl: ApiClient.baseUrl,
+        headers: {'Content-Type': 'application/json'},
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+      ));
+
+      final response = await refreshDio.post(
+        '/auth/refresh',
+        data: {'refresh_token': refreshToken},
+      );
+
+      if (response.statusCode == 200) {
+        final newAccessToken = response.data['accessToken'] ??
+            response.data['token'] ??
+            response.data['access_token'];
+        final newRefreshToken =
+            response.data['refreshToken'] ?? response.data['refresh_token'];
+
+        if (newAccessToken != null) {
+          await _storage.write(
+              key: TokenKeys.accessToken, value: newAccessToken as String);
+        }
+        if (newRefreshToken != null) {
+          await _storage.write(
+              key: TokenKeys.refreshToken, value: newRefreshToken as String);
+        }
+        return newAccessToken != null;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Clears all stored tokens.
+  Future<void> _clearTokens() async {
+    await _storage.delete(key: TokenKeys.accessToken);
+    await _storage.delete(key: TokenKeys.refreshToken);
+  }
+
+  /// @deprecated Use `add(VerificationCompleted(...))` instead.
   Future<void> setAuthenticatedFromVerification({
     required String token,
     required Map<String, dynamic> userJson,
   }) async {
-    await _storage.write(key: _tokenKey, value: token);
-    final user = UserModel.fromJson(userJson);
-    emit(Authenticated(user: user));
+    add(VerificationCompleted(token: token, userJson: userJson));
   }
 }

@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
 import 'package:felo_na/core/widgets/inputs/custom_text_field.dart';
+import 'package:felo_na/core/network/api_client.dart';
 
 /// Reset Password Screen — set new password after OTP verification
 class ResetPasswordScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
-  final _dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'));
+  final _dio = Dio(BaseOptions(baseUrl: ApiClient.baseUrl));
   bool _loading = false;
 
   @override

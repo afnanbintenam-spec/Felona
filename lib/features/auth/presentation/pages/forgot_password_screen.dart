@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
 import 'package:felo_na/core/widgets/inputs/custom_text_field.dart';
+import 'package:felo_na/core/network/api_client.dart';
 
 /// Forgot Password Screen — sends reset code to email
 class ForgotPasswordScreen extends StatefulWidget {
@@ -15,7 +16,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _dio = Dio(BaseOptions(baseUrl: 'http://localhost:3000'));
+  final _dio = Dio(BaseOptions(baseUrl: ApiClient.baseUrl));
   bool _loading = false;
 
   @override

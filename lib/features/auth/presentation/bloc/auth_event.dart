@@ -76,3 +76,19 @@ class UploadProfilePictureRequested extends AuthEvent {
   @override
   List<Object?> get props => [imagePath];
 }
+
+/// Event triggered after OTP email verification succeeds.
+class VerificationCompleted extends AuthEvent {
+  final String token;
+  final String? refreshToken;
+  final Map<String, dynamic> userJson;
+
+  const VerificationCompleted({
+    required this.token,
+    this.refreshToken,
+    required this.userJson,
+  });
+
+  @override
+  List<Object?> get props => [token, refreshToken, userJson];
+}
