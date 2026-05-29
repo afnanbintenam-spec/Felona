@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:felo_na/core/constants/enums.dart';
 import 'package:felo_na/core/errors/failures.dart';
@@ -16,6 +17,8 @@ import 'package:felo_na/features/auth/domain/usecases/update_profile_usecase.dar
 import 'package:felo_na/features/auth/domain/usecases/upload_profile_picture_usecase.dart';
 
 import 'auth_usecases_test.mocks.dart';
+
+@GenerateMocks([AuthRepository, File])
 
 void main() {
   late MockAuthRepository mockAuthRepository;

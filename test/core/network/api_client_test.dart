@@ -434,13 +434,9 @@ void main() {
 // Test helper class for ErrorInterceptorHandler
 class _TestErrorHandler extends ErrorInterceptorHandler {
   final void Function(DioException)? onReject;
-  final void Function(DioException)? onNext;
-  final void Function(Response)? onResolve;
 
   _TestErrorHandler({
     this.onReject,
-    this.onNext,
-    this.onResolve,
   });
 
   @override
@@ -449,12 +445,8 @@ class _TestErrorHandler extends ErrorInterceptorHandler {
   }
 
   @override
-  void next(DioException err) {
-    onNext?.call(err);
-  }
+  void next(DioException err) {}
 
   @override
-  void resolve(Response response) {
-    onResolve?.call(response);
-  }
+  void resolve(Response response) {}
 }
