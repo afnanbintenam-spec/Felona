@@ -2,12 +2,16 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
+const { Op } = require('sequelize');
 const { User, EcoActivity, Otp } = require('../models');
 const { authenticate } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { sendOtpEmail } = require('../services/emailService');
 
 const router = express.Router();
+
+// Max OTP verification attempts before lockout
+const MAX_OTP_ATTEMPTS = 5;
 
 // ─── TOKEN GENERATION ───────────────────────────────────────────
 // Short-lived access token (1 hour)
@@ -30,6 +34,14 @@ const generateTokenPair = (userId) => ({
 
 // Generate 6-digit OTP
 const generateOtp = () => crypto.randomInt(100000, 999999).toString();
+
+// Invalidate all previous unused OTPs for this email/purpose
+const invalidatePreviousOtps = async (email, purpose) => {
+  await Otp.update(
+    { is_used: true },
+    { where: { email, purpose, is_used: false } }
+  );
+};
 
 // ─── REGISTER ───────────────────────────────────────────────────
 // Creates unverified user + sends OTP. Returns NO token until verified.
@@ -56,7 +68,8 @@ router.post('/register', [
     const existing = await User.findOne({ where: { email } });
     if (existing) {
       if (!existing.is_email_verified) {
-        // Resend OTP for unverified user
+        // Resend OTP for unverified user — invalidate old ones first
+        await invalidatePreviousOtps(email, 'email_verification');
         const otp = generateOtp();
         await Otp.create({
           email,
@@ -84,6 +97,7 @@ router.post('/register', [
     });
 
     // Send verification OTP
+    await invalidatePreviousOtps(email, 'email_verification');
     const otp = generateOtp();
     await Otp.create({
       email,
@@ -121,16 +135,31 @@ router.post('/verify-email', [
     }
 
     const otp = await Otp.findOne({
-      where: { email, code, purpose: 'email_verification', is_used: false },
+      where: { email, purpose: 'email_verification', is_used: false },
       order: [['created_at', 'DESC']],
     });
 
     if (!otp) {
-      return res.status(400).json({ error: 'Invalid verification code' });
+      return res.status(400).json({ error: 'No active verification code. Request a new one.' });
     }
 
     if (new Date() > otp.expires_at) {
       return res.status(400).json({ error: 'Verification code expired. Request a new one.' });
+    }
+
+    // Brute-force protection: limit attempts
+    if (otp.attempts >= MAX_OTP_ATTEMPTS) {
+      await otp.update({ is_used: true });
+      return res.status(429).json({ error: 'Too many attempts. Request a new code.' });
+    }
+
+    // Check code
+    if (otp.code !== code) {
+      await otp.increment('attempts');
+      const remaining = MAX_OTP_ATTEMPTS - otp.attempts - 1;
+      return res.status(400).json({
+        error: `Invalid code. ${remaining > 0 ? remaining + ' attempts remaining.' : 'Request a new code.'}`,
+      });
     }
 
     // Mark OTP used + verify user
@@ -173,6 +202,7 @@ router.post('/resend-verification', [
       return res.status(400).json({ error: 'Email already verified' });
     }
 
+    await invalidatePreviousOtps(email, 'email_verification');
     const otp = generateOtp();
     await Otp.create({
       email,
@@ -214,6 +244,7 @@ router.post('/login', [
 
     // Block login if email not verified — send fresh OTP
     if (!user.is_email_verified) {
+      await invalidatePreviousOtps(email, 'email_verification');
       const otp = generateOtp();
       await Otp.create({
         email,
@@ -290,6 +321,7 @@ router.post('/forgot-password', [
 
     if (!user) return res.json({ message: responseMsg });
 
+    await invalidatePreviousOtps(email, 'password_reset');
     const otp = generateOtp();
     await Otp.create({
       email,
@@ -315,13 +347,27 @@ router.post('/verify-reset-otp', [
     const { email, code } = req.body;
 
     const otp = await Otp.findOne({
-      where: { email, code, purpose: 'password_reset', is_used: false },
+      where: { email, purpose: 'password_reset', is_used: false },
       order: [['created_at', 'DESC']],
     });
 
-    if (!otp) return res.status(400).json({ error: 'Invalid code' });
+    if (!otp) return res.status(400).json({ error: 'No active reset code. Request a new one.' });
     if (new Date() > otp.expires_at) {
       return res.status(400).json({ error: 'Code expired. Please request a new one.' });
+    }
+
+    // Brute-force protection
+    if (otp.attempts >= MAX_OTP_ATTEMPTS) {
+      await otp.update({ is_used: true });
+      return res.status(429).json({ error: 'Too many attempts. Request a new code.' });
+    }
+
+    if (otp.code !== code) {
+      await otp.increment('attempts');
+      const remaining = MAX_OTP_ATTEMPTS - otp.attempts - 1;
+      return res.status(400).json({
+        error: `Invalid code. ${remaining > 0 ? remaining + ' attempts remaining.' : 'Request a new code.'}`,
+      });
     }
 
     await otp.update({ is_used: true });
@@ -349,6 +395,7 @@ router.post('/resend-reset-otp', [
       return res.json({ message: 'If this email is registered, you will receive a code.' });
     }
 
+    await invalidatePreviousOtps(email, 'password_reset');
     const otp = generateOtp();
     await Otp.create({
       email,

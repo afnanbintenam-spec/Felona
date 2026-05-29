@@ -27,6 +27,10 @@ const Otp = sequelize.define('Otp', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  attempts: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
 }, {
   tableName: 'otps',
   timestamps: true,

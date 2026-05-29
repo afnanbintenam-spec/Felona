@@ -1,4 +1,14 @@
 require('dotenv').config();
+
+// ─── Environment Validation ──────────────────────────────────
+const requiredEnvVars = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'JWT_SECRET', 'GEMINI_API_KEY'];
+const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+if (missingVars.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
+  console.error('   Copy backend/.env.example to backend/.env and fill in your values.');
+  process.exit(1);
+}
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
