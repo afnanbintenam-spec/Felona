@@ -1,19 +1,29 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/features/pickup/presentation/bloc/pickup_event.dart';
 import 'package:felo_na/features/pickup/presentation/bloc/pickup_state.dart';
-import 'package:felo_na/features/pickup/domain/entities/pickup_request.dart';
-import 'package:felo_na/core/constants/enums.dart';
+import 'package:felo_na/features/pickup/domain/repositories/pickup_repository.dart';
 
 /// BLoC for managing pickup state.
 ///
-/// Handles pickup request operations, status updates, and tracking.
+/// Handles pickup request operations, scheduling, status updates,
+/// tracking, QR verification, and rating.
 class PickupBloc extends Bloc<PickupEvent, PickupState> {
-  PickupBloc() : super(const PickupInitial()) {
+  final PickupRepository _repository;
+
+  PickupBloc({required PickupRepository repository})
+      : _repository = repository,
+        super(const PickupInitial()) {
     on<LoadPickupsRequested>(_onLoadPickupsRequested);
     on<CreatePickupRequested>(_onCreatePickupRequested);
+    on<LoadPickupDetailRequested>(_onLoadPickupDetailRequested);
     on<AcceptPickupRequested>(_onAcceptPickupRequested);
     on<UpdatePickupStatusRequested>(_onUpdatePickupStatusRequested);
     on<CompletePickupRequested>(_onCompletePickupRequested);
+    on<LoadPickupHistoryRequested>(_onLoadPickupHistoryRequested);
+    on<RatePickupRequested>(_onRatePickupRequested);
+    on<VerifyPickupQrRequested>(_onVerifyPickupQrRequested);
+    on<RefreshTrackingRequested>(_onRefreshTrackingRequested);
+    on<CancelRecurringScheduleRequested>(_onCancelRecurringScheduleRequested);
   }
 
   Future<void> _onLoadPickupsRequested(
@@ -22,17 +32,12 @@ class PickupBloc extends Bloc<PickupEvent, PickupState> {
   ) async {
     emit(const PickupLoading());
 
-    try {
-      // TODO: Call use case to load pickups
-      await Future.delayed(const Duration(seconds: 1));
+    final result = await _repository.getPickups();
 
-      // Mock data
-      final pickups = _getMockPickups();
-
-      emit(PickupLoaded(pickups: pickups));
-    } catch (e) {
-      emit(PickupError(message: e.toString()));
-    }
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickups) => emit(PickupLoaded(pickups: pickups)),
+    );
   }
 
   Future<void> _onCreatePickupRequested(
@@ -41,173 +46,171 @@ class PickupBloc extends Bloc<PickupEvent, PickupState> {
   ) async {
     emit(const CreatingPickup());
 
-    try {
-      // TODO: Call use case to create pickup
-      await Future.delayed(const Duration(seconds: 2));
+    final result = await _repository.createPickup(
+      category: event.category,
+      estimatedWeight: event.estimatedWeight,
+      address: event.address,
+      latitude: event.latitude,
+      longitude: event.longitude,
+      notes: event.notes,
+      scheduledDate: event.scheduledDate,
+      timeSlot: event.timeSlot,
+      isRecurring: event.isRecurring,
+      recurrenceFrequency: event.recurrenceFrequency,
+      recurrenceDayOfWeek: event.recurrenceDayOfWeek,
+    );
 
-      final newPickup = PickupRequest(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: 'current-user-id',
-        userName: 'Current User',
-        category: event.category,
-        estimatedWeight: event.estimatedWeight,
-        address: event.address,
-        notes: event.notes,
-        status: PickupStatus.pending,
-        createdAt: DateTime.now(),
-      );
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickup) {
+        emit(PickupCreated(pickup: pickup));
+      },
+    );
+  }
 
-      emit(PickupCreated(pickup: newPickup));
-      
-      // Reload pickups
-      add(const LoadPickupsRequested());
-    } catch (e) {
-      emit(PickupError(message: e.toString()));
-    }
+  Future<void> _onLoadPickupDetailRequested(
+    LoadPickupDetailRequested event,
+    Emitter<PickupState> emit,
+  ) async {
+    emit(const PickupLoading());
+
+    final result = await _repository.getPickupById(event.pickupId);
+
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickup) => emit(PickupDetailLoaded(pickup: pickup)),
+    );
   }
 
   Future<void> _onAcceptPickupRequested(
     AcceptPickupRequested event,
     Emitter<PickupState> emit,
   ) async {
-    if (state is! PickupLoaded) return;
-
-    final currentState = state as PickupLoaded;
     emit(const PickupLoading());
 
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
+    final result = await _repository.acceptPickup(event.pickupId);
 
-      final updatedPickups = currentState.pickups.map((pickup) {
-        if (pickup.id == event.pickupId) {
-          return pickup.copyWith(
-            status: PickupStatus.accepted,
-            collectorId: 'current-collector-id',
-            collectorName: 'Current Collector',
-            acceptedAt: DateTime.now(),
-          );
-        }
-        return pickup;
-      }).toList();
-
-      emit(PickupLoaded(pickups: updatedPickups));
-    } catch (e) {
-      emit(PickupError(message: e.toString()));
-    }
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickup) {
+        emit(PickupStatusUpdated(pickup: pickup));
+      },
+    );
   }
 
   Future<void> _onUpdatePickupStatusRequested(
     UpdatePickupStatusRequested event,
     Emitter<PickupState> emit,
   ) async {
-    if (state is! PickupLoaded) return;
-
-    final currentState = state as PickupLoaded;
     emit(const PickupLoading());
 
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
+    final result =
+        await _repository.updatePickupStatus(event.pickupId, event.newStatus);
 
-      final updatedPickups = currentState.pickups.map((pickup) {
-        if (pickup.id == event.pickupId) {
-          return pickup.copyWith(status: event.newStatus);
-        }
-        return pickup;
-      }).toList();
-
-      emit(PickupLoaded(pickups: updatedPickups));
-    } catch (e) {
-      emit(PickupError(message: e.toString()));
-    }
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickup) {
+        emit(PickupStatusUpdated(pickup: pickup));
+      },
+    );
   }
 
   Future<void> _onCompletePickupRequested(
     CompletePickupRequested event,
     Emitter<PickupState> emit,
   ) async {
-    if (state is! PickupLoaded) return;
-
-    final currentState = state as PickupLoaded;
     emit(const PickupLoading());
 
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
+    final result = await _repository.completePickup(event.pickupId);
 
-      final updatedPickups = currentState.pickups.map((pickup) {
-        if (pickup.id == event.pickupId) {
-          // Calculate eco points based on weight
-          final ecoPoints = (pickup.estimatedWeight * 10).toInt();
-          
-          return pickup.copyWith(
-            status: PickupStatus.completed,
-            completedAt: DateTime.now(),
-            ecoPointsEarned: ecoPoints,
-          );
-        }
-        return pickup;
-      }).toList();
-
-      emit(PickupLoaded(pickups: updatedPickups));
-    } catch (e) {
-      emit(PickupError(message: e.toString()));
-    }
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickup) {
+        emit(PickupStatusUpdated(pickup: pickup));
+      },
+    );
   }
 
-  // Mock data generator
-  List<PickupRequest> _getMockPickups() {
-    return [
-      PickupRequest(
-        id: '1',
-        userId: 'user1',
-        userName: 'John Doe',
-        category: WasteCategory.plastic,
-        estimatedWeight: 5.0,
-        address: '123 Main St, Dhaka, Bangladesh',
-        notes: 'Please call before arriving',
-        status: PickupStatus.pending,
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      PickupRequest(
-        id: '2',
-        userId: 'user2',
-        userName: 'Jane Smith',
-        category: WasteCategory.paper,
-        estimatedWeight: 10.0,
-        address: '456 Park Ave, Chittagong, Bangladesh',
-        status: PickupStatus.accepted,
-        collectorId: 'collector1',
-        collectorName: 'Mike Collector',
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-        acceptedAt: DateTime.now().subtract(const Duration(hours: 4)),
-      ),
-      PickupRequest(
-        id: '3',
-        userId: 'user3',
-        userName: 'Bob Johnson',
-        category: WasteCategory.metal,
-        estimatedWeight: 15.0,
-        address: '789 Oak Rd, Sylhet, Bangladesh',
-        status: PickupStatus.onTheWay,
-        collectorId: 'collector2',
-        collectorName: 'Sarah Collector',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        acceptedAt: DateTime.now().subtract(const Duration(hours: 20)),
-      ),
-      PickupRequest(
-        id: '4',
-        userId: 'user4',
-        userName: 'Alice Williams',
-        category: WasteCategory.glass,
-        estimatedWeight: 8.0,
-        address: '321 Elm St, Rajshahi, Bangladesh',
-        status: PickupStatus.completed,
-        collectorId: 'collector1',
-        collectorName: 'Mike Collector',
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        acceptedAt: DateTime.now().subtract(const Duration(days: 2, hours: 2)),
-        completedAt: DateTime.now().subtract(const Duration(days: 1, hours: 20)),
-        ecoPointsEarned: 80,
-      ),
-    ];
+  Future<void> _onLoadPickupHistoryRequested(
+    LoadPickupHistoryRequested event,
+    Emitter<PickupState> emit,
+  ) async {
+    emit(const PickupLoading());
+
+    final result = await _repository.getMyPickupHistory(
+      page: event.page,
+      limit: event.limit,
+    );
+
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickups) => emit(PickupHistoryLoaded(
+        pickups: pickups,
+        currentPage: event.page,
+        hasMore: pickups.length >= event.limit,
+      )),
+    );
+  }
+
+  Future<void> _onRatePickupRequested(
+    RatePickupRequested event,
+    Emitter<PickupState> emit,
+  ) async {
+    emit(const PickupLoading());
+
+    final result = await _repository.ratePickup(
+      pickupId: event.pickupId,
+      rating: event.rating,
+      feedback: event.feedback,
+    );
+
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickup) => emit(PickupRated(pickup: pickup)),
+    );
+  }
+
+  Future<void> _onVerifyPickupQrRequested(
+    VerifyPickupQrRequested event,
+    Emitter<PickupState> emit,
+  ) async {
+    emit(const PickupLoading());
+
+    final result = await _repository.verifyPickupQr(
+      pickupId: event.pickupId,
+      qrToken: event.qrToken,
+    );
+
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickup) => emit(PickupQrVerified(pickup: pickup)),
+    );
+  }
+
+  Future<void> _onRefreshTrackingRequested(
+    RefreshTrackingRequested event,
+    Emitter<PickupState> emit,
+  ) async {
+    final result = await _repository.getPickupTracking(event.pickupId);
+
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (pickup) => emit(PickupTrackingUpdated(pickup: pickup)),
+    );
+  }
+
+  Future<void> _onCancelRecurringScheduleRequested(
+    CancelRecurringScheduleRequested event,
+    Emitter<PickupState> emit,
+  ) async {
+    emit(const PickupLoading());
+
+    final result =
+        await _repository.cancelRecurringSchedule(event.scheduleId);
+
+    result.fold(
+      (failure) => emit(PickupError(message: failure.message)),
+      (_) => emit(const RecurringScheduleCancelled()),
+    );
   }
 }

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/network/api_client.dart';
 import 'package:felo_na/core/network/auth_interceptor.dart';
@@ -232,15 +232,43 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const ProfilePictureUploading());
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      final updatedUser = currentUser.copyWith(
-        profilePictureUrl: event.imagePath,
-        updatedAt: DateTime.now(),
+      final token = await _storage.read(key: TokenKeys.accessToken);
+      
+      // Upload the image file to the backend
+      final formData = FormData.fromMap({
+        'profile_picture': await MultipartFile.fromFile(
+          event.imagePath,
+          filename: event.imagePath.split('/').last,
+        ),
+      });
+
+      final uploadDio = Dio(BaseOptions(
+        baseUrl: ApiClient.baseUrl,
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+      ));
+
+      final response = await uploadDio.post(
+        '/auth/profile/${currentUser.id}/picture',
+        data: formData,
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
-      emit(ProfilePictureUploaded(user: updatedUser));
-      emit(Authenticated(user: updatedUser));
-    } catch (_) {
-      emit(const AuthError(message: 'Upload failed.'));
+
+      if (response.statusCode == 200) {
+        final imageUrl = response.data['profile_picture_url'] as String?;
+        final updatedUser = currentUser.copyWith(
+          profilePictureUrl: imageUrl ?? event.imagePath,
+          updatedAt: DateTime.now(),
+        );
+        emit(ProfilePictureUploaded(user: updatedUser));
+        emit(Authenticated(user: updatedUser));
+      } else {
+        emit(const AuthError(message: 'Upload failed.'));
+        emit(Authenticated(user: currentUser));
+      }
+    } catch (e) {
+      debugPrint('[AuthBloc] Upload error: $e');
+      emit(AuthError(message: 'Upload failed: ${e.toString()}'));
       emit(Authenticated(user: currentUser));
     }
   }

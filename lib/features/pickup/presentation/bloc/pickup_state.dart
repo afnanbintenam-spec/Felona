@@ -63,3 +63,64 @@ class PickupStatusUpdated extends PickupState {
   @override
   List<Object?> get props => [pickup];
 }
+
+/// Pickup detail loaded.
+class PickupDetailLoaded extends PickupState {
+  final PickupRequest pickup;
+
+  const PickupDetailLoaded({required this.pickup});
+
+  @override
+  List<Object?> get props => [pickup];
+}
+
+/// Pickup history loaded with pagination.
+class PickupHistoryLoaded extends PickupState {
+  final List<PickupRequest> pickups;
+  final int currentPage;
+  final bool hasMore;
+
+  const PickupHistoryLoaded({
+    required this.pickups,
+    this.currentPage = 1,
+    this.hasMore = true,
+  });
+
+  @override
+  List<Object?> get props => [pickups, currentPage, hasMore];
+}
+
+/// Pickup rated successfully.
+class PickupRated extends PickupState {
+  final PickupRequest pickup;
+
+  const PickupRated({required this.pickup});
+
+  @override
+  List<Object?> get props => [pickup];
+}
+
+/// QR verification successful.
+class PickupQrVerified extends PickupState {
+  final PickupRequest pickup;
+
+  const PickupQrVerified({required this.pickup});
+
+  @override
+  List<Object?> get props => [pickup];
+}
+
+/// Live tracking data updated.
+class PickupTrackingUpdated extends PickupState {
+  final PickupRequest pickup;
+
+  const PickupTrackingUpdated({required this.pickup});
+
+  @override
+  List<Object?> get props => [pickup];
+}
+
+/// Recurring schedule cancelled.
+class RecurringScheduleCancelled extends PickupState {
+  const RecurringScheduleCancelled();
+}

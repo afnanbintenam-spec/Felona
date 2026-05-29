@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1062477866360",
+    "project_id": "felona-72453",
+    "storage_bucket": "felona-72453.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1062477866360:android:18a95740dd3341fdd5148d",
+        "android_client_info": {
+          "package_name": "com.felona.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAbRDyGgXLkwyMtC-fz3e1vGqGsyG1k98"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

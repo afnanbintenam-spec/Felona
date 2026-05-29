@@ -4,33 +4,42 @@ import 'package:get_it/get_it.dart';
 
 import '../network/api_client.dart';
 import '../network/secure_storage_service.dart';
+import '../services/image_upload_service.dart';
+import '../services/push_notification_service.dart';
+
+// Marketplace
+import '../../features/marketplace/data/datasources/marketplace_remote_data_source.dart';
+import '../../features/marketplace/data/repositories/marketplace_repository_impl.dart';
+import '../../features/marketplace/domain/repositories/marketplace_repository.dart';
+import '../../features/marketplace/presentation/bloc/marketplace_bloc.dart';
+
+// Pickup
+import '../../features/pickup/data/datasources/pickup_remote_data_source.dart';
+import '../../features/pickup/data/repositories/pickup_repository_impl.dart';
+import '../../features/pickup/domain/repositories/pickup_repository.dart';
+import '../../features/pickup/presentation/bloc/pickup_bloc.dart';
+
+// Eco Score
+import '../../features/eco_score/data/datasources/eco_remote_data_source.dart';
+import '../../features/eco_score/data/repositories/eco_repository_impl.dart';
+import '../../features/eco_score/domain/repositories/eco_repository.dart';
+import '../../features/eco_score/presentation/bloc/eco_bloc.dart';
+
+// Notifications
+import '../../features/notifications/data/datasources/notifications_remote_data_source.dart';
+import '../../features/notifications/data/repositories/notifications_repository_impl.dart';
+import '../../features/notifications/domain/repositories/notifications_repository.dart';
+import '../../features/notifications/presentation/bloc/notifications_bloc.dart';
 
 /// Global service locator instance.
-///
-/// Provides access to registered dependencies throughout the application.
-/// Use `sl<Type>()` to retrieve registered instances.
 final sl = GetIt.instance;
 
 /// Initializes all dependencies and registers them with the service locator.
-///
-/// This function should be called once at app startup, before runApp().
-/// It sets up the dependency injection container with all required services.
-///
-/// Example:
-/// ```dart
-/// void main() async {
-///   WidgetsFlutterBinding.ensureInitialized();
-///   await initializeDependencies();
-///   runApp(MyApp());
-/// }
-/// ```
 Future<void> initializeDependencies() async {
   // ========================================================================
   // Core Services
   // ========================================================================
 
-  // Register FlutterSecureStorage as a singleton
-  // This is the underlying storage mechanism used by SecureStorageService
   sl.registerLazySingleton<FlutterSecureStorage>(
     () => const FlutterSecureStorage(
       aOptions: AndroidOptions(
@@ -39,20 +48,14 @@ Future<void> initializeDependencies() async {
     ),
   );
 
-  // Register SecureStorageService as a singleton
-  // Provides secure storage for JWT tokens and sensitive data
   sl.registerLazySingleton<SecureStorageService>(
     () => SecureStorageServiceImpl(
       storage: sl<FlutterSecureStorage>(),
     ),
   );
 
-  // Register Dio as a singleton
-  // HTTP client used by ApiClient
   sl.registerLazySingleton<Dio>(() => Dio());
 
-  // Register ApiClient as a singleton
-  // Centralized HTTP client with interceptors for auth, logging, and error handling
   sl.registerLazySingleton<ApiClient>(
     () => ApiClient(
       secureStorage: sl<FlutterSecureStorage>(),
@@ -60,88 +63,101 @@ Future<void> initializeDependencies() async {
     ),
   );
 
+  // Image Upload Service
+  sl.registerLazySingleton<ImageUploadService>(
+    () => ImageUploadService(apiClient: sl<ApiClient>()),
+  );
+
+  // Push Notification Service
+  sl.registerLazySingleton<PushNotificationService>(
+    () => PushNotificationService(),
+  );
+
   // ========================================================================
   // Feature Dependencies
   // ========================================================================
-  // TODO: Register feature-specific dependencies (repositories, use cases, BLoCs)
-  // as they are implemented in subsequent tasks.
-  //
-  // Example structure:
-  // _initAuthDependencies();
-  // _initMarketplaceDependencies();
-  // _initPickupDependencies();
-  // _initEcoScoreDependencies();
-  // _initNotificationDependencies();
+  _initMarketplaceDependencies();
+  _initPickupDependencies();
+  _initEcoScoreDependencies();
+  _initNotificationDependencies();
 }
 
 // ========================================================================
-// Feature-specific dependency initialization functions
+// Marketplace
 // ========================================================================
-// These will be implemented as features are developed
+void _initMarketplaceDependencies() {
+  // Data source
+  sl.registerLazySingleton<MarketplaceRemoteDataSource>(
+    () => MarketplaceRemoteDataSourceImpl(apiClient: sl<ApiClient>()),
+  );
 
-/// Initializes authentication feature dependencies.
-///
-/// Registers:
-/// - AuthRemoteDataSource
-/// - AuthLocalDataSource
-/// - AuthRepository
-/// - Authentication use cases
-/// - AuthBloc
-// void _initAuthDependencies() {
-//   // Data sources
-//   sl.registerLazySingleton<AuthRemoteDataSource>(
-//     () => AuthRemoteDataSourceImpl(apiClient: sl()),
-//   );
-//
-//   sl.registerLazySingleton<AuthLocalDataSource>(
-//     () => AuthLocalDataSourceImpl(secureStorage: sl()),
-//   );
-//
-//   // Repository
-//   sl.registerLazySingleton<AuthRepository>(
-//     () => AuthRepositoryImpl(
-//       remoteDataSource: sl(),
-//       localDataSource: sl(),
-//     ),
-//   );
-//
-//   // Use cases
-//   sl.registerLazySingleton(() => RegisterUseCase(sl()));
-//   sl.registerLazySingleton(() => LoginUseCase(sl()));
-//   sl.registerLazySingleton(() => LogoutUseCase(sl()));
-//   sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
-//   sl.registerLazySingleton(() => UploadProfilePictureUseCase(sl()));
-//   sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
-//
-//   // BLoC
-//   sl.registerFactory(
-//     () => AuthBloc(
-//       registerUseCase: sl(),
-//       loginUseCase: sl(),
-//       logoutUseCase: sl(),
-//       updateProfileUseCase: sl(),
-//       uploadProfilePictureUseCase: sl(),
-//       getCurrentUserUseCase: sl(),
-//     ),
-//   );
-// }
+  // Repository
+  sl.registerLazySingleton<MarketplaceRepository>(
+    () => MarketplaceRepositoryImpl(remoteDataSource: sl<MarketplaceRemoteDataSource>()),
+  );
 
-/// Initializes marketplace feature dependencies.
-// void _initMarketplaceDependencies() {
-//   // TODO: Implement when marketplace feature is developed
-// }
+  // BLoC
+  sl.registerFactory<MarketplaceBloc>(
+    () => MarketplaceBloc(repository: sl<MarketplaceRepository>()),
+  );
+}
 
-/// Initializes pickup feature dependencies.
-// void _initPickupDependencies() {
-//   // TODO: Implement when pickup feature is developed
-// }
+// ========================================================================
+// Pickup
+// ========================================================================
+void _initPickupDependencies() {
+  // Data source
+  sl.registerLazySingleton<PickupRemoteDataSource>(
+    () => PickupRemoteDataSourceImpl(apiClient: sl<ApiClient>()),
+  );
 
-/// Initializes eco score feature dependencies.
-// void _initEcoScoreDependencies() {
-//   // TODO: Implement when eco score feature is developed
-// }
+  // Repository
+  sl.registerLazySingleton<PickupRepository>(
+    () => PickupRepositoryImpl(remoteDataSource: sl<PickupRemoteDataSource>()),
+  );
 
-/// Initializes notification feature dependencies.
-// void _initNotificationDependencies() {
-//   // TODO: Implement when notification feature is developed
-// }
+  // BLoC
+  sl.registerFactory<PickupBloc>(
+    () => PickupBloc(repository: sl<PickupRepository>()),
+  );
+}
+
+// ========================================================================
+// Eco Score
+// ========================================================================
+void _initEcoScoreDependencies() {
+  // Data source
+  sl.registerLazySingleton<EcoRemoteDataSource>(
+    () => EcoRemoteDataSourceImpl(apiClient: sl<ApiClient>()),
+  );
+
+  // Repository
+  sl.registerLazySingleton<EcoRepository>(
+    () => EcoRepositoryImpl(remoteDataSource: sl<EcoRemoteDataSource>()),
+  );
+
+  // BLoC
+  sl.registerFactory<EcoBloc>(
+    () => EcoBloc(repository: sl<EcoRepository>()),
+  );
+}
+
+// ========================================================================
+// Notifications
+// ========================================================================
+void _initNotificationDependencies() {
+  // Data source
+  sl.registerLazySingleton<NotificationsRemoteDataSource>(
+    () => NotificationsRemoteDataSourceImpl(apiClient: sl<ApiClient>()),
+  );
+
+  // Repository
+  sl.registerLazySingleton<NotificationsRepository>(
+    () => NotificationsRepositoryImpl(remoteDataSource: sl<NotificationsRemoteDataSource>()),
+  );
+
+  // BLoC
+  sl.registerFactory<NotificationsBloc>(
+    () => NotificationsBloc(repository: sl<NotificationsRepository>()),
+  );
+}

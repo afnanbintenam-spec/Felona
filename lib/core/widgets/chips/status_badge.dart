@@ -25,9 +25,15 @@ class StatusBadge extends StatelessWidget {
       case PickupStatus.pending:
         color = AppColors.warning;
         break;
+      case PickupStatus.assigned:
+        color = const Color(0xFF9B59B6);
+        break;
       case PickupStatus.accepted:
       case PickupStatus.onTheWay:
         color = AppColors.info;
+        break;
+      case PickupStatus.arrived:
+        color = AppColors.success;
         break;
       case PickupStatus.completed:
         color = AppColors.success;
@@ -95,10 +101,10 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: badgeColor.withOpacity(0.1),
+        color: badgeColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: badgeColor.withOpacity(0.3),
+          color: badgeColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

@@ -1,14 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_event.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_state.dart';
 import 'package:felo_na/features/marketplace/domain/entities/listing.dart';
-import 'package:felo_na/core/constants/enums.dart';
+import 'package:felo_na/features/marketplace/domain/repositories/marketplace_repository.dart';
 
 /// BLoC for managing marketplace state.
 ///
-/// Handles listing operations, search, and favorites.
+/// Handles listing operations, search, and favorites via real API calls.
 class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
-  MarketplaceBloc() : super(const MarketplaceInitial()) {
+  final MarketplaceRepository _repository;
+
+  MarketplaceBloc({required MarketplaceRepository repository})
+      : _repository = repository,
+        super(const MarketplaceInitial()) {
     on<LoadListingsRequested>(_onLoadListingsRequested);
     on<LoadListingsByCategoryRequested>(_onLoadListingsByCategoryRequested);
     on<SearchListingsRequested>(_onSearchListingsRequested);
@@ -23,17 +28,12 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
   ) async {
     emit(const MarketplaceLoading());
 
-    try {
-      // TODO: Call use case to load listings
-      await Future.delayed(const Duration(seconds: 1));
+    final result = await _repository.getListings();
 
-      // Mock data
-      final listings = _getMockListings();
-
-      emit(MarketplaceLoaded(listings: listings));
-    } catch (e) {
-      emit(MarketplaceError(message: e.toString()));
-    }
+    result.fold(
+      (failure) => emit(MarketplaceError(message: failure.message)),
+      (listings) => emit(MarketplaceLoaded(listings: listings)),
+    );
   }
 
   Future<void> _onLoadListingsByCategoryRequested(
@@ -42,18 +42,12 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
   ) async {
     emit(const MarketplaceLoading());
 
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
+    final result = await _repository.getListingsByCategory(event.category);
 
-      final allListings = _getMockListings();
-      final filteredListings = allListings
-          .where((listing) => listing.category == event.category)
-          .toList();
-
-      emit(MarketplaceLoaded(listings: filteredListings));
-    } catch (e) {
-      emit(MarketplaceError(message: e.toString()));
-    }
+    result.fold(
+      (failure) => emit(MarketplaceError(message: failure.message)),
+      (listings) => emit(MarketplaceLoaded(listings: listings)),
+    );
   }
 
   Future<void> _onSearchListingsRequested(
@@ -62,22 +56,12 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
   ) async {
     emit(const MarketplaceLoading());
 
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
+    final result = await _repository.searchListings(event.query);
 
-      final allListings = _getMockListings();
-      final searchResults = allListings
-          .where((listing) =>
-              listing.title.toLowerCase().contains(event.query.toLowerCase()) ||
-              listing.description
-                  .toLowerCase()
-                  .contains(event.query.toLowerCase()))
-          .toList();
-
-      emit(MarketplaceLoaded(listings: searchResults));
-    } catch (e) {
-      emit(MarketplaceError(message: e.toString()));
-    }
+    result.fold(
+      (failure) => emit(MarketplaceError(message: failure.message)),
+      (listings) => emit(MarketplaceLoaded(listings: listings)),
+    );
   }
 
   Future<void> _onToggleFavoriteRequested(
@@ -86,6 +70,8 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
   ) async {
     if (state is MarketplaceLoaded) {
       final currentState = state as MarketplaceLoaded;
+
+      // Optimistic update
       final updatedListings = currentState.listings.map((listing) {
         if (listing.id == event.listingId) {
           return listing.copyWith(isFavorite: !listing.isFavorite);
@@ -94,6 +80,17 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
       }).toList();
 
       emit(MarketplaceLoaded(listings: updatedListings));
+
+      // Call API in background
+      final result = await _repository.toggleFavorite(event.listingId);
+      result.fold(
+        (failure) {
+          // Revert on failure
+          debugPrint('[MarketplaceBloc] Toggle favorite failed: ${failure.message}');
+          emit(MarketplaceLoaded(listings: currentState.listings));
+        },
+        (_) {}, // Success — optimistic update already applied
+      );
     }
   }
 
@@ -103,27 +100,18 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
   ) async {
     emit(const CreatingListing());
 
-    try {
-      // TODO: Call use case to create listing
-      await Future.delayed(const Duration(seconds: 2));
+    final result = await _repository.createListing(
+      title: event.title,
+      description: event.description,
+      price: event.price,
+      category: event.category,
+      imagePaths: event.imagePaths,
+    );
 
-      final newListing = Listing(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: event.title,
-        description: event.description,
-        price: event.price,
-        category: event.category,
-        imageUrls: event.imagePaths, // In real app, these would be uploaded URLs
-        sellerId: 'current-user-id',
-        sellerName: 'Current User',
-        status: ListingStatus.active,
-        createdAt: DateTime.now(),
-      );
-
-      emit(ListingCreated(listing: newListing));
-    } catch (e) {
-      emit(MarketplaceError(message: e.toString()));
-    }
+    result.fold(
+      (failure) => emit(MarketplaceError(message: failure.message)),
+      (listing) => emit(ListingCreated(listing: listing)),
+    );
   }
 
   Future<void> _onLoadMyListingsRequested(
@@ -132,86 +120,11 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
   ) async {
     emit(const MarketplaceLoading());
 
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
+    final result = await _repository.getMyListings();
 
-      // Mock user's listings
-      final myListings = _getMockListings().take(3).toList();
-
-      emit(MarketplaceLoaded(listings: myListings));
-    } catch (e) {
-      emit(MarketplaceError(message: e.toString()));
-    }
-  }
-
-  // Mock data generator
-  List<Listing> _getMockListings() {
-    return [
-      Listing(
-        id: '1',
-        title: 'Vintage Wooden Chair',
-        description: 'Beautiful vintage wooden chair in excellent condition. Perfect for your home office or dining room.',
-        price: 45.00,
-        category: ListingCategory.furniture,
-        imageUrls: ['https://via.placeholder.com/400'],
-        sellerId: 'user1',
-        sellerName: 'John Doe',
-        status: ListingStatus.active,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        location: 'Dhaka, Bangladesh',
-      ),
-      Listing(
-        id: '2',
-        title: 'Old Laptop - Working Condition',
-        description: 'Dell laptop, 4GB RAM, 500GB HDD. Works perfectly, just upgrading to a new one.',
-        price: 150.00,
-        category: ListingCategory.electronics,
-        imageUrls: ['https://via.placeholder.com/400'],
-        sellerId: 'user2',
-        sellerName: 'Jane Smith',
-        status: ListingStatus.active,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        location: 'Chittagong, Bangladesh',
-      ),
-      Listing(
-        id: '3',
-        title: 'Programming Books Collection',
-        description: 'Collection of 10 programming books including Clean Code, Design Patterns, and more.',
-        price: 80.00,
-        category: ListingCategory.books,
-        imageUrls: ['https://via.placeholder.com/400'],
-        sellerId: 'user3',
-        sellerName: 'Mike Johnson',
-        status: ListingStatus.active,
-        createdAt: DateTime.now().subtract(const Duration(hours: 12)),
-        location: 'Sylhet, Bangladesh',
-      ),
-      Listing(
-        id: '4',
-        title: 'Microwave Oven',
-        description: 'Samsung microwave oven, barely used. Moving to a new place and need to sell.',
-        price: 60.00,
-        category: ListingCategory.appliances,
-        imageUrls: ['https://via.placeholder.com/400'],
-        sellerId: 'user4',
-        sellerName: 'Sarah Williams',
-        status: ListingStatus.active,
-        createdAt: DateTime.now().subtract(const Duration(hours: 6)),
-        location: 'Dhaka, Bangladesh',
-      ),
-      Listing(
-        id: '5',
-        title: 'Office Desk and Chair Set',
-        description: 'Complete office furniture set. Desk with drawers and ergonomic chair.',
-        price: 120.00,
-        category: ListingCategory.office,
-        imageUrls: ['https://via.placeholder.com/400'],
-        sellerId: 'user5',
-        sellerName: 'David Brown',
-        status: ListingStatus.active,
-        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-        location: 'Rajshahi, Bangladesh',
-      ),
-    ];
+    result.fold(
+      (failure) => emit(MarketplaceError(message: failure.message)),
+      (listings) => emit(MarketplaceLoaded(listings: listings)),
+    );
   }
 }

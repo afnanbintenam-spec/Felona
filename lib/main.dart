@@ -1,7 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/constants/app_theme.dart';
 import 'package:felo_na/core/di/injection_container.dart' as di;
+import 'package:felo_na/core/services/push_notification_service.dart';
 
 // BLoCs
 import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
@@ -9,6 +11,7 @@ import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_bloc.
 import 'package:felo_na/features/pickup/presentation/bloc/pickup_bloc.dart';
 import 'package:felo_na/features/eco_score/presentation/bloc/eco_bloc.dart';
 import 'package:felo_na/features/notifications/presentation/bloc/notifications_bloc.dart';
+import 'package:felo_na/features/notifications/presentation/bloc/notifications_event.dart';
 
 // Auth screens
 import 'package:felo_na/features/auth/presentation/pages/splash_screen.dart';
@@ -36,6 +39,11 @@ import 'package:felo_na/features/marketplace/presentation/pages/item_detail_scre
 import 'package:felo_na/features/pickup/presentation/pages/next_collection_screen.dart';
 import 'package:felo_na/features/pickup/presentation/pages/sorting_guide_screen.dart';
 import 'package:felo_na/features/pickup/presentation/pages/create_pickup_screen.dart';
+import 'package:felo_na/features/pickup/presentation/pages/schedule_pickup_screen.dart';
+import 'package:felo_na/features/pickup/presentation/pages/pickup_tracking_screen.dart';
+import 'package:felo_na/features/pickup/presentation/pages/pickup_history_screen.dart';
+import 'package:felo_na/features/pickup/presentation/pages/rate_pickup_screen.dart';
+import 'package:felo_na/features/pickup/presentation/pages/qr_scanner_screen.dart';
 
 // Eco Score screens
 import 'package:felo_na/features/eco_score/presentation/pages/eco_score_screen.dart';
@@ -45,31 +53,57 @@ import 'package:felo_na/features/eco_score/presentation/pages/leaderboard_screen
 import 'package:felo_na/features/notifications/presentation/pages/notifications_screen.dart';
 
 /// Application entry point.
-///
-/// Initializes the dependency injection container before running the app.
-/// This ensures all services are registered and available throughout the app.
 void main() async {
-  // Ensure Flutter bindings are initialized before any async operations
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
 
   // Initialize dependency injection container
   await di.initializeDependencies();
 
+  // Initialize push notifications
+  final pushService = di.sl<PushNotificationService>();
+  await pushService.initialize();
+
   runApp(const FeloNaApp());
 }
 
-class FeloNaApp extends StatelessWidget {
+class FeloNaApp extends StatefulWidget {
   const FeloNaApp({super.key});
+
+  @override
+  State<FeloNaApp> createState() => _FeloNaAppState();
+}
+
+class _FeloNaAppState extends State<FeloNaApp> {
+  late final NotificationsBloc _notificationsBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationsBloc = di.sl<NotificationsBloc>();
+
+    // Wire push notifications to NotificationsBloc
+    final pushService = di.sl<PushNotificationService>();
+    pushService.onNotificationReceived = (data) {
+      _notificationsBloc.add(NewNotificationReceived(data: data));
+    };
+    pushService.onTokenRefresh = (token) {
+      // Register new token with backend
+      di.sl<NotificationsBloc>(); // Token registration handled via repository
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => AuthBloc()),
-        BlocProvider(create: (context) => MarketplaceBloc()),
-        BlocProvider(create: (context) => PickupBloc()),
-        BlocProvider(create: (context) => EcoBloc()),
-        BlocProvider(create: (context) => NotificationsBloc()),
+        BlocProvider(create: (context) => di.sl<MarketplaceBloc>()),
+        BlocProvider(create: (context) => di.sl<PickupBloc>()),
+        BlocProvider(create: (context) => di.sl<EcoBloc>()),
+        BlocProvider.value(value: _notificationsBloc),
       ],
       child: MaterialApp(
         title: 'FeloNa - Smart Waste Management',
@@ -77,7 +111,6 @@ class FeloNaApp extends StatelessWidget {
         theme: AppTheme.darkTheme,
         initialRoute: '/',
         onGenerateRoute: (settings) {
-          // Routes that need arguments
           switch (settings.name) {
             case '/otp':
               final args = settings.arguments as Map<String, dynamic>? ?? {};
@@ -92,6 +125,27 @@ class FeloNaApp extends StatelessWidget {
               return MaterialPageRoute(
                 builder: (_) => ResetPasswordScreen(
                   resetToken: args['reset_token'] ?? '',
+                ),
+              );
+            case '/pickup-tracking':
+              final args = settings.arguments as Map<String, dynamic>? ?? {};
+              return MaterialPageRoute(
+                builder: (_) => PickupTrackingScreen(
+                  pickupId: args['pickupId'] ?? '',
+                ),
+              );
+            case '/rate-pickup':
+              final args = settings.arguments as Map<String, dynamic>? ?? {};
+              return MaterialPageRoute(
+                builder: (_) => RatePickupScreen(
+                  pickupId: args['pickupId'] ?? '',
+                ),
+              );
+            case '/qr-scanner':
+              final args = settings.arguments as Map<String, dynamic>? ?? {};
+              return MaterialPageRoute(
+                builder: (_) => QrScannerScreen(
+                  pickupId: args['pickupId'] ?? '',
                 ),
               );
             default:
@@ -111,6 +165,8 @@ class FeloNaApp extends StatelessWidget {
           '/next-collection': (context) => const NextCollectionScreen(),
           '/sorting-guide': (context) => const SortingGuideScreen(),
           '/create-pickup': (context) => const CreatePickupScreen(),
+          '/schedule-pickup': (context) => const SchedulePickupScreen(),
+          '/pickup-history': (context) => const PickupHistoryScreen(),
           '/eco-score': (context) => const EcoScoreScreen(),
           '/notifications': (context) => const NotificationsScreen(),
           '/profile': (context) => const ProfileScreen(),

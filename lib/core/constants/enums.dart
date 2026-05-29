@@ -147,8 +147,10 @@ enum ListingCategory {
 /// Pickup request status enumeration.
 enum PickupStatus {
   pending,
+  assigned,
   accepted,
   onTheWay,
+  arrived,
   completed,
   cancelled;
 
@@ -156,10 +158,14 @@ enum PickupStatus {
     switch (this) {
       case PickupStatus.pending:
         return 'Pending';
+      case PickupStatus.assigned:
+        return 'Assigned';
       case PickupStatus.accepted:
         return 'Accepted';
       case PickupStatus.onTheWay:
         return 'On The Way';
+      case PickupStatus.arrived:
+        return 'Arrived';
       case PickupStatus.completed:
         return 'Completed';
       case PickupStatus.cancelled:
@@ -172,14 +178,113 @@ enum PickupStatus {
     switch (this) {
       case PickupStatus.pending:
         return '#F39C12'; // Warning/Orange
+      case PickupStatus.assigned:
+        return '#9B59B6'; // Purple
       case PickupStatus.accepted:
         return '#03A9F4'; // Info/Blue
       case PickupStatus.onTheWay:
         return '#03A9F4'; // Info/Blue
+      case PickupStatus.arrived:
+        return '#2ECC71'; // Green
       case PickupStatus.completed:
         return '#27AE60'; // Success/Green
       case PickupStatus.cancelled:
         return '#E74C3C'; // Error/Red
+    }
+  }
+}
+
+/// Time slot for pickup scheduling (2-hour windows).
+enum PickupTimeSlot {
+  morning1, // 08:00 - 10:00
+  morning2, // 10:00 - 12:00
+  afternoon1, // 12:00 - 14:00
+  afternoon2, // 14:00 - 16:00
+  evening1, // 16:00 - 18:00
+  evening2; // 18:00 - 20:00
+
+  String get displayName {
+    switch (this) {
+      case PickupTimeSlot.morning1:
+        return '08:00 - 10:00';
+      case PickupTimeSlot.morning2:
+        return '10:00 - 12:00';
+      case PickupTimeSlot.afternoon1:
+        return '12:00 - 14:00';
+      case PickupTimeSlot.afternoon2:
+        return '14:00 - 16:00';
+      case PickupTimeSlot.evening1:
+        return '16:00 - 18:00';
+      case PickupTimeSlot.evening2:
+        return '18:00 - 20:00';
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case PickupTimeSlot.morning1:
+        return 'Early Morning';
+      case PickupTimeSlot.morning2:
+        return 'Late Morning';
+      case PickupTimeSlot.afternoon1:
+        return 'Early Afternoon';
+      case PickupTimeSlot.afternoon2:
+        return 'Late Afternoon';
+      case PickupTimeSlot.evening1:
+        return 'Early Evening';
+      case PickupTimeSlot.evening2:
+        return 'Late Evening';
+    }
+  }
+
+  String get apiValue {
+    switch (this) {
+      case PickupTimeSlot.morning1:
+        return '08:00-10:00';
+      case PickupTimeSlot.morning2:
+        return '10:00-12:00';
+      case PickupTimeSlot.afternoon1:
+        return '12:00-14:00';
+      case PickupTimeSlot.afternoon2:
+        return '14:00-16:00';
+      case PickupTimeSlot.evening1:
+        return '16:00-18:00';
+      case PickupTimeSlot.evening2:
+        return '18:00-20:00';
+    }
+  }
+
+  static PickupTimeSlot fromApiValue(String value) {
+    switch (value) {
+      case '08:00-10:00':
+        return PickupTimeSlot.morning1;
+      case '10:00-12:00':
+        return PickupTimeSlot.morning2;
+      case '12:00-14:00':
+        return PickupTimeSlot.afternoon1;
+      case '14:00-16:00':
+        return PickupTimeSlot.afternoon2;
+      case '16:00-18:00':
+        return PickupTimeSlot.evening1;
+      case '18:00-20:00':
+        return PickupTimeSlot.evening2;
+      default:
+        return PickupTimeSlot.morning1;
+    }
+  }
+}
+
+/// Recurrence frequency for recurring pickups.
+enum RecurrenceFrequency {
+  weekly,
+  biweekly;
+
+  String get displayName {
+    switch (this) {
+      case RecurrenceFrequency.weekly:
+        return 'Every Week';
+      case RecurrenceFrequency.biweekly:
+        return 'Every 2 Weeks';
     }
   }
 }

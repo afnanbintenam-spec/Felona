@@ -2,13 +2,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/features/notifications/presentation/bloc/notifications_event.dart';
 import 'package:felo_na/features/notifications/presentation/bloc/notifications_state.dart';
 import 'package:felo_na/features/notifications/domain/entities/notification.dart';
+import 'package:felo_na/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:felo_na/core/constants/enums.dart';
 
 /// BLoC for managing notifications state.
 ///
-/// Handles notification loading, marking as read, and FCM integration.
+/// Handles notification loading, marking as read, and FCM integration via real API calls.
 class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
-  NotificationsBloc() : super(const NotificationsInitial()) {
+  final NotificationsRepository _repository;
+
+  NotificationsBloc({required NotificationsRepository repository})
+      : _repository = repository,
+        super(const NotificationsInitial()) {
     on<LoadNotificationsRequested>(_onLoadNotificationsRequested);
     on<MarkNotificationAsReadRequested>(_onMarkNotificationAsReadRequested);
     on<MarkAllNotificationsAsReadRequested>(_onMarkAllNotificationsAsReadRequested);
@@ -23,20 +28,18 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
   ) async {
     emit(const NotificationsLoading());
 
-    try {
-      // TODO: Call use case to load notifications
-      await Future.delayed(const Duration(seconds: 1));
+    final result = await _repository.getNotifications();
 
-      final notifications = _getMockNotifications();
-      final unreadCount = notifications.where((n) => !n.isRead).length;
-
-      emit(NotificationsLoaded(
-        notifications: notifications,
-        unreadCount: unreadCount,
-      ));
-    } catch (e) {
-      emit(NotificationsError(message: e.toString()));
-    }
+    result.fold(
+      (failure) => emit(NotificationsError(message: failure.message)),
+      (notifications) {
+        final unreadCount = notifications.where((n) => !n.isRead).length;
+        emit(NotificationsLoaded(
+          notifications: notifications,
+          unreadCount: unreadCount,
+        ));
+      },
+    );
   }
 
   Future<void> _onMarkNotificationAsReadRequested(
@@ -47,27 +50,24 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
 
     final currentState = state as NotificationsLoaded;
 
-    try {
-      // TODO: Call use case to mark notification as read
-      await Future.delayed(const Duration(milliseconds: 300));
+    // Optimistic update
+    final updatedNotifications = currentState.notifications.map((n) {
+      if (n.id == event.notificationId) {
+        return n.copyWith(isRead: true);
+      }
+      return n;
+    }).toList();
 
-      final updatedNotifications = currentState.notifications.map((n) {
-        if (n.id == event.notificationId) {
-          return n.copyWith(isRead: true);
-        }
-        return n;
-      }).toList();
+    final unreadCount = updatedNotifications.where((n) => !n.isRead).length;
 
-      final unreadCount = updatedNotifications.where((n) => !n.isRead).length;
+    emit(NotificationMarkedAsRead(notificationId: event.notificationId));
+    emit(NotificationsLoaded(
+      notifications: updatedNotifications,
+      unreadCount: unreadCount,
+    ));
 
-      emit(NotificationMarkedAsRead(notificationId: event.notificationId));
-      emit(NotificationsLoaded(
-        notifications: updatedNotifications,
-        unreadCount: unreadCount,
-      ));
-    } catch (e) {
-      emit(NotificationsError(message: e.toString()));
-    }
+    // Call API in background
+    await _repository.markAsRead(event.notificationId);
   }
 
   Future<void> _onMarkAllNotificationsAsReadRequested(
@@ -78,22 +78,19 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
 
     final currentState = state as NotificationsLoaded;
 
-    try {
-      // TODO: Call use case to mark all notifications as read
-      await Future.delayed(const Duration(milliseconds: 500));
+    // Optimistic update
+    final updatedNotifications = currentState.notifications
+        .map((n) => n.copyWith(isRead: true))
+        .toList();
 
-      final updatedNotifications = currentState.notifications
-          .map((n) => n.copyWith(isRead: true))
-          .toList();
+    emit(const AllNotificationsMarkedAsRead());
+    emit(NotificationsLoaded(
+      notifications: updatedNotifications,
+      unreadCount: 0,
+    ));
 
-      emit(const AllNotificationsMarkedAsRead());
-      emit(NotificationsLoaded(
-        notifications: updatedNotifications,
-        unreadCount: 0,
-      ));
-    } catch (e) {
-      emit(NotificationsError(message: e.toString()));
-    }
+    // Call API in background
+    await _repository.markAllAsRead();
   }
 
   Future<void> _onDeleteNotificationRequested(
@@ -104,24 +101,21 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
 
     final currentState = state as NotificationsLoaded;
 
-    try {
-      // TODO: Call use case to delete notification
-      await Future.delayed(const Duration(milliseconds: 300));
+    // Optimistic update
+    final updatedNotifications = currentState.notifications
+        .where((n) => n.id != event.notificationId)
+        .toList();
 
-      final updatedNotifications = currentState.notifications
-          .where((n) => n.id != event.notificationId)
-          .toList();
+    final unreadCount = updatedNotifications.where((n) => !n.isRead).length;
 
-      final unreadCount = updatedNotifications.where((n) => !n.isRead).length;
+    emit(NotificationDeleted(notificationId: event.notificationId));
+    emit(NotificationsLoaded(
+      notifications: updatedNotifications,
+      unreadCount: unreadCount,
+    ));
 
-      emit(NotificationDeleted(notificationId: event.notificationId));
-      emit(NotificationsLoaded(
-        notifications: updatedNotifications,
-        unreadCount: unreadCount,
-      ));
-    } catch (e) {
-      emit(NotificationsError(message: e.toString()));
-    }
+    // Call API in background
+    await _repository.deleteNotification(event.notificationId);
   }
 
   Future<void> _onRefreshNotificationsRequested(
@@ -135,7 +129,11 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
     NewNotificationReceived event,
     Emitter<NotificationsState> emit,
   ) async {
-    if (state is! NotificationsLoaded) return;
+    if (state is! NotificationsLoaded) {
+      // If not loaded yet, just load from API
+      add(const LoadNotificationsRequested());
+      return;
+    }
 
     final currentState = state as NotificationsLoaded;
 
@@ -179,71 +177,5 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
       default:
         return NotificationType.general;
     }
-  }
-
-  // Mock data generator
-  List<AppNotification> _getMockNotifications() {
-    return [
-      AppNotification(
-        id: '1',
-        userId: 'current-user-id',
-        type: NotificationType.newOffer,
-        title: 'New Offer Received',
-        message: 'John Doe offered \$25 for your Old Laptop',
-        isRead: false,
-        createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
-        data: {'listingId': 'listing-1', 'offerId': 'offer-1'},
-      ),
-      AppNotification(
-        id: '2',
-        userId: 'current-user-id',
-        type: NotificationType.pickupAccepted,
-        title: 'Pickup Accepted',
-        message: 'Collector Mike accepted your pickup request',
-        isRead: false,
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        data: {'pickupId': 'pickup-1'},
-      ),
-      AppNotification(
-        id: '3',
-        userId: 'current-user-id',
-        type: NotificationType.pickupStatusUpdate,
-        title: 'Collector On The Way',
-        message: 'Mike is on the way to your location',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-        data: {'pickupId': 'pickup-1'},
-      ),
-      AppNotification(
-        id: '4',
-        userId: 'current-user-id',
-        type: NotificationType.offerAccepted,
-        title: 'Offer Accepted',
-        message: 'Sarah accepted your offer of \$30 for Vintage Chair',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        data: {'listingId': 'listing-2', 'offerId': 'offer-2'},
-      ),
-      AppNotification(
-        id: '5',
-        userId: 'current-user-id',
-        type: NotificationType.pickupCompleted,
-        title: 'Pickup Completed',
-        message: 'Pickup completed! You earned 50 eco points 🌱',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        data: {'pickupId': 'pickup-2', 'points': 50},
-      ),
-      AppNotification(
-        id: '6',
-        userId: 'current-user-id',
-        type: NotificationType.newMessage,
-        title: 'New Message',
-        message: 'Emma sent you a message about Plastic Bottles',
-        isRead: true,
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-        data: {'conversationId': 'conv-1'},
-      ),
-    ];
   }
 }
