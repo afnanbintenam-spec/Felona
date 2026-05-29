@@ -42,10 +42,74 @@ const Pickup = sequelize.define('Pickup', {
     allowNull: true,
   },
   status: {
-    type: DataTypes.ENUM('requested', 'accepted', 'on_the_way', 'collected', 'recycled', 'cancelled'),
-    defaultValue: 'requested',
+    type: DataTypes.ENUM('pending', 'assigned', 'accepted', 'on_the_way', 'arrived', 'completed', 'cancelled'),
+    defaultValue: 'pending',
   },
+
+  // ─── Scheduling ─────────────────────────────────────────────
   scheduled_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+  },
+  time_slot: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+    comment: 'e.g. 08:00-10:00, 10:00-12:00',
+  },
+  is_recurring: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  recurrence_frequency: {
+    type: DataTypes.ENUM('weekly', 'biweekly'),
+    allowNull: true,
+  },
+  recurrence_day: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: '1=Monday, 7=Sunday',
+  },
+  recurring_schedule_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    comment: 'Groups recurring pickups together',
+  },
+
+  // ─── QR Verification ────────────────────────────────────────
+  qr_token: {
+    type: DataTypes.STRING(64),
+    allowNull: true,
+    unique: true,
+    comment: '128-bit token for QR verification',
+  },
+
+  // ─── Tracking ───────────────────────────────────────────────
+  collector_latitude: {
+    type: DataTypes.DECIMAL(10, 8),
+    allowNull: true,
+  },
+  collector_longitude: {
+    type: DataTypes.DECIMAL(11, 8),
+    allowNull: true,
+  },
+  eta_minutes: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+
+  // ─── Rating ─────────────────────────────────────────────────
+  rating: {
+    type: DataTypes.DECIMAL(2, 1),
+    allowNull: true,
+    validate: { min: 1, max: 5 },
+  },
+  feedback: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+
+  // ─── Completion ─────────────────────────────────────────────
+  accepted_at: {
     type: DataTypes.DATE,
     allowNull: true,
   },

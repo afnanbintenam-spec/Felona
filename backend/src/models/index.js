@@ -6,6 +6,7 @@ const Offer = require('./Offer');
 const EcoActivity = require('./EcoActivity');
 const Otp = require('./Otp');
 const WasteScan = require('./WasteScan');
+const Notification = require('./Notification');
 
 // ─── Associations ─────────────────────────────────────────────
 
@@ -37,6 +38,10 @@ EcoActivity.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 User.hasMany(WasteScan, { foreignKey: 'user_id', as: 'scans' });
 WasteScan.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+// User has many Notifications
+User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications' });
+Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 module.exports = {
   sequelize,
   User,
@@ -46,4 +51,5 @@ module.exports = {
   EcoActivity,
   Otp,
   WasteScan,
+  Notification,
 };

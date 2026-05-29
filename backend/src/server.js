@@ -24,6 +24,8 @@ const listingsRoutes = require('./routes/listings');
 const pickupsRoutes = require('./routes/pickups');
 const ecoRoutes = require('./routes/eco');
 const aiRoutes = require('./routes/ai');
+const notificationsRoutes = require('./routes/notifications');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -88,6 +90,8 @@ app.use('/listings', rateLimiter(RATE_LIMIT_MAX_REQUESTS), listingsRoutes);
 app.use('/pickups', rateLimiter(RATE_LIMIT_MAX_REQUESTS), pickupsRoutes);
 app.use('/eco', rateLimiter(RATE_LIMIT_MAX_REQUESTS), ecoRoutes);
 app.use('/ai', rateLimiter(AUTH_RATE_LIMIT_MAX), aiRoutes);
+app.use('/notifications', rateLimiter(RATE_LIMIT_MAX_REQUESTS), notificationsRoutes);
+app.use('/admin', rateLimiter(RATE_LIMIT_MAX_REQUESTS), adminRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -117,8 +121,73 @@ const start = async () => {
     await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
     console.log('✅ Models synced');
 
-    app.listen(PORT, '0.0.0.0', () => {
+    const http = require('http');
+    const { WebSocketServer } = require('ws');
+    const server = http.createServer(app);
+
+    // ─── WebSocket for realtime tracking ─────────────────────
+    const wss = new WebSocketServer({ server, path: '/ws' });
+    const clients = new Map(); // userId -> ws
+
+    wss.on('connection', (ws, req) => {
+      let userId = null;
+
+      ws.on('message', (data) => {
+        try {
+          const msg = JSON.parse(data);
+
+          // Auth handshake
+          if (msg.type === 'auth') {
+            const jwt = require('jsonwebtoken');
+            const decoded = jwt.verify(msg.token, process.env.JWT_SECRET);
+            userId = decoded.userId;
+            clients.set(userId, ws);
+            ws.send(JSON.stringify({ type: 'auth_ok' }));
+          }
+
+          // Collector location update
+          if (msg.type === 'location_update' && userId) {
+            const { pickup_id, latitude, longitude, eta_minutes } = msg;
+            // Broadcast to pickup requester
+            const { Pickup } = require('./models');
+            Pickup.findByPk(pickup_id).then(pickup => {
+              if (pickup) {
+                pickup.update({
+                  collector_latitude: latitude,
+                  collector_longitude: longitude,
+                  eta_minutes,
+                });
+                // Send to requester
+                const requesterWs = clients.get(pickup.user_id);
+                if (requesterWs && requesterWs.readyState === 1) {
+                  requesterWs.send(JSON.stringify({
+                    type: 'tracking_update',
+                    pickup_id,
+                    latitude,
+                    longitude,
+                    eta_minutes,
+                  }));
+                }
+              }
+            });
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      });
+
+      ws.on('close', () => {
+        if (userId) clients.delete(userId);
+      });
+    });
+
+    // Make wss accessible for routes if needed
+    app.set('wss', wss);
+    app.set('wsClients', clients);
+
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 FeloNa API running on http://0.0.0.0:${PORT}`);
+      console.log(`🔌 WebSocket available at ws://0.0.0.0:${PORT}/ws`);
       console.log(`📋 Environment: ${process.env.NODE_ENV}`);
     });
   } catch (error) {
