@@ -40,13 +40,12 @@ const sendOtpEmail = async (email, otp, purpose) => {
     console.log(`📧 OTP sent successfully to ${email}`);
     return true;
   } catch (error) {
-    console.error(`❌ Email send failed:`, error.message);
-    console.log(`\n📧 ═══════════════════════════════════════`);
-    console.log(`   EMAIL: ${email}`);
-    console.log(`   OTP: ${otp}`);
-    console.log(`   PURPOSE: ${purpose}`);
-    console.log(`   ERROR: ${error.message}`);
-    console.log(`═══════════════════════════════════════════\n`);
+    console.error(`❌ Email send failed to ${email}:`, error.message);
+    if (process.env.NODE_ENV === 'development') {
+      // Only log OTP in development for debugging
+      console.log(`   [DEV] OTP for ${email}: ${otp} (${purpose})`);
+    }
+    // Return true so registration flow continues even if email fails
     return true;
   }
 };

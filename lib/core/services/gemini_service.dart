@@ -3,14 +3,21 @@ import 'dart:typed_data';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 /// Gemini AI Service — handles waste scanning and recycling chat
+///
+/// The API key is injected via --dart-define at build time:
+///   flutter run --dart-define=GEMINI_API_KEY=your_key_here
 class GeminiService {
-  static const String _apiKey = 'REDACTED_KEY';
+  static const String _apiKey = String.fromEnvironment(
+    'GEMINI_API_KEY',
+    defaultValue: '',
+  );
 
   late final GenerativeModel _visionModel;
   late final GenerativeModel _chatModel;
   ChatSession? _chatSession;
 
   GeminiService() {
+    assert(_apiKey.isNotEmpty, 'GEMINI_API_KEY must be provided via --dart-define');
     _visionModel = GenerativeModel(
       model: 'gemini-2.0-flash-lite',
       apiKey: _apiKey,

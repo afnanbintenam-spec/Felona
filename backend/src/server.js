@@ -18,9 +18,41 @@ const aiRoutes = require('./routes/ai');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ─── Rate Limiting (in-memory, simple) ───────────────────────
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_MAX_REQUESTS = 100; // per window per IP
+const AUTH_RATE_LIMIT_MAX = 10; // stricter for auth endpoints
+
+function rateLimiter(maxRequests) {
+  return (req, res, next) => {
+    const key = `${req.ip}:${req.baseUrl}`;
+    const now = Date.now();
+    const entry = rateLimitMap.get(key);
+
+    if (!entry || now - entry.start > RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.set(key, { start: now, count: 1 });
+      return next();
+    }
+
+    entry.count++;
+    if (entry.count > maxRequests) {
+      return res.status(429).json({
+        error: 'Too many requests. Please try again later.',
+        retryAfter: Math.ceil((entry.start + RATE_LIMIT_WINDOW_MS - now) / 1000),
+      });
+    }
+    next();
+  };
+}
+
 // ─── Middleware ───────────────────────────────────────────────
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+  : null; // null = allow all in development
+
 app.use(cors({
-  origin: true,
+  origin: allowedOrigins || true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -41,11 +73,11 @@ if (!fs.existsSync(uploadDir)) {
 app.use('/uploads', express.static(path.resolve(uploadDir)));
 
 // ─── Routes ──────────────────────────────────────────────────
-app.use('/auth', authRoutes);
-app.use('/listings', listingsRoutes);
-app.use('/pickups', pickupsRoutes);
-app.use('/eco', ecoRoutes);
-app.use('/ai', aiRoutes);
+app.use('/auth', rateLimiter(AUTH_RATE_LIMIT_MAX), authRoutes);
+app.use('/listings', rateLimiter(RATE_LIMIT_MAX_REQUESTS), listingsRoutes);
+app.use('/pickups', rateLimiter(RATE_LIMIT_MAX_REQUESTS), pickupsRoutes);
+app.use('/eco', rateLimiter(RATE_LIMIT_MAX_REQUESTS), ecoRoutes);
+app.use('/ai', rateLimiter(AUTH_RATE_LIMIT_MAX), aiRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

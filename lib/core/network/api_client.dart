@@ -20,12 +20,18 @@ class ApiClient {
   void Function()? onForceLogout;
 
   /// Base URL for the API.
+  ///
+  /// Configured via --dart-define=API_BASE_URL=https://your-server.com
+  /// Defaults:
   /// - Android emulator: 10.0.2.2 maps to host machine's localhost
   /// - iOS simulator / Web / Desktop: localhost works directly
-  /// - Physical device: uses machine's LAN IP
   static String get baseUrl {
+    const envUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (envUrl.isNotEmpty) return envUrl;
+
+    // Development fallbacks only
     if (kIsWeb) return 'http://localhost:3000';
-    if (Platform.isAndroid) return 'http://192.168.0.234:3000';
+    if (Platform.isAndroid) return 'http://10.0.2.2:3000';
     return 'http://localhost:3000';
   }
 

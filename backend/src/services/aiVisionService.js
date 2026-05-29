@@ -1,6 +1,10 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'REDACTED_KEY';
+if (!process.env.GEMINI_API_KEY) {
+  console.error('❌ GEMINI_API_KEY environment variable is required');
+  process.exit(1);
+}
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 class AIVisionService {
   constructor() {

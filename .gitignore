@@ -48,6 +48,8 @@ app.*.map.json
 backend/node_modules/
 backend/uploads/
 backend/.env
+backend/.env.*
+!backend/.env.example
 
 # Build artifacts
 build/
