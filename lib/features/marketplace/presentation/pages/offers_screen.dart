@@ -204,8 +204,7 @@ class _OffersScreenState extends State<OffersScreen>
               ),
               // Status badge
               StatusBadge(
-                label: _getStatusLabel(offer.status),
-                type: _getStatusType(offer.status),
+                text: _getStatusLabel(offer.status),
               ),
             ],
           ),
@@ -268,7 +267,6 @@ class _OffersScreenState extends State<OffersScreen>
                   child: PrimaryButton(
                     text: 'Accept',
                     onPressed: () => _handleAcceptOffer(offer),
-                    height: 40,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -295,17 +293,6 @@ class _OffersScreenState extends State<OffersScreen>
         return 'Accepted';
       case OfferStatus.rejected:
         return 'Rejected';
-    }
-  }
-
-  StatusType _getStatusType(OfferStatus status) {
-    switch (status) {
-      case OfferStatus.pending:
-        return StatusType.pending;
-      case OfferStatus.accepted:
-        return StatusType.completed;
-      case OfferStatus.rejected:
-        return StatusType.rejected;
     }
   }
 

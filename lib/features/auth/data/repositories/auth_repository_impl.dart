@@ -5,7 +5,6 @@ import 'package:felo_na/core/errors/exceptions.dart';
 import 'package:felo_na/core/errors/failures.dart';
 import 'package:felo_na/features/auth/data/datasources/auth_local_data_source.dart';
 import 'package:felo_na/features/auth/data/datasources/auth_remote_data_source.dart';
-import 'package:felo_na/features/auth/data/models/user_model.dart';
 import 'package:felo_na/features/auth/domain/entities/user.dart';
 import 'package:felo_na/features/auth/domain/repositories/auth_repository.dart';
 

@@ -229,6 +229,7 @@ class _PickupDetailScreenState extends State<PickupDetailScreen> {
               CategoryChip(
                 label: _wasteCategory,
                 isSelected: true,
+                onTap: () {},
               ),
             ],
           ),
@@ -383,7 +384,6 @@ class _PickupDetailScreenState extends State<PickupDetailScreen> {
                   onPressed: () {
                     // TODO: Implement call functionality
                   },
-                  height: 44,
                 ),
               ),
               const SizedBox(width: 12),
@@ -394,7 +394,6 @@ class _PickupDetailScreenState extends State<PickupDetailScreen> {
                   onPressed: () {
                     // TODO: Implement message functionality
                   },
-                  height: 44,
                 ),
               ),
             ],

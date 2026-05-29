@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:felo_na/core/constants/app_colors.dart';
-import 'package:felo_na/core/constants/app_text_styles.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
