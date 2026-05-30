@@ -204,10 +204,10 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A0A),
-        foregroundColor: AppColors.gray900,
+        backgroundColor: AppColors.background,
+        foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
@@ -215,8 +215,11 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         ),
         title: Text(
           'Give it a second life',
-          style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.gray900,
+          style: TextStyle(
+            fontFamily: 'Finlandica',
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
         actions: [

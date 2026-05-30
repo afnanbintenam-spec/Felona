@@ -1,68 +1,105 @@
 import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
-import 'package:felo_na/core/constants/app_text_styles.dart';
+import 'package:felo_na/core/constants/spacing.dart';
 
+/// Next Collection — Klima-inspired with nature hero header.
 class NextCollectionScreen extends StatelessWidget {
   const NextCollectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
+      backgroundColor: AppColors.background,
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // App Bar
-            _buildAppBar(context),
-            
-            // Scrollable Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Collection Date Card
-                    _buildCollectionDateCard(),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Your Schedule Section
-                    _buildScheduleSection(),
-                  ],
-                ),
+            // Hero header with background
+            _buildHeroHeader(context),
+            // Content
+            Padding(
+              padding: Spacing.pagePadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Spacing.gap24,
+                  _buildCollectionDateCard(),
+                  Spacing.gap24,
+                  _buildScheduleSection(context),
+                  const SizedBox(height: 100),
+                ],
               ),
             ),
-            
-            // Bottom Navigation
-            _buildBottomNavigation(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
+  Widget _buildHeroHeader(BuildContext context) {
+    return Container(
+      height: 180,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios, size: 20),
-            onPressed: () => Navigator.pop(context),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(32),
+              bottomRight: Radius.circular(32),
+            ),
+            child: Image.asset(
+              'Assets/backgrounds/bg_cardboard.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  Container(color: AppColors.deepGreen),
+            ),
           ),
-          const SizedBox(width: 12),
-          const Text(
-            'Next collection',
-            style: AppTextStyles.headlineMedium,
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(32),
+                bottomRight: Radius.circular(32),
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.3),
+                  Colors.black.withValues(alpha: 0.6),
+                ],
+              ),
+            ),
           ),
-          const Spacer(),
-          Image.asset(
-            'Assets/mainLogo.png',
-            width: 32,
-            height: 32,
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Next Collection',
+                    style: TextStyle(
+                      fontFamily: 'Finlandica',
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Your upcoming waste pickup schedule',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -74,93 +111,76 @@ class NextCollectionScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Date
           const Text(
             'Wednesday,',
             style: TextStyle(
+              fontFamily: 'Finlandica',
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: AppColors.gray900,
+              color: AppColors.textPrimary,
             ),
           ),
           const Text(
             'May 22',
             style: TextStyle(
+              fontFamily: 'Finlandica',
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: AppColors.gray900,
+              color: AppColors.primaryGreen,
             ),
           ),
           const SizedBox(height: 8),
-          
-          // Last Update
-          Text(
+          const Text(
             'Last update: May 17',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.gray700,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              color: AppColors.textTertiary,
             ),
           ),
-          
-          const SizedBox(height: 24),
-          
-          // Waste Categories
+          const SizedBox(height: 20),
+          // Waste categories
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildWasteChip(
-                icon: '📦',
-                label: 'Paper-cardboard',
-                color: const Color(0xFFD4A574),
-              ),
-              _buildWasteChip(
-                icon: '🗑️',
-                label: 'Residual waste',
-                color: const Color(0xFFB8B8D4),
-              ),
-              _buildWasteChip(
-                icon: '♻️',
-                label: 'PMD',
-                color: const Color(0xFFB8D4C8),
-              ),
+              _buildWasteChip('📦', 'Paper-cardboard',
+                  AppColors.accentOrange.withValues(alpha: 0.15)),
+              _buildWasteChip('🗑️', 'Residual waste',
+                  AppColors.textTertiary.withValues(alpha: 0.15)),
+              _buildWasteChip('♻️', 'PMD',
+                  AppColors.primaryGreen.withValues(alpha: 0.15)),
             ],
           ),
-          
-          const SizedBox(height: 24),
-          
-          // Location Button
+          const SizedBox(height: 20),
+          // Location button
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.gray50,
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border, width: 1),
             ),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  size: 20,
-                  color: AppColors.gray700,
-                ),
-                const SizedBox(width: 8),
+                Icon(Icons.location_on_outlined,
+                    size: 20, color: AppColors.primaryGreen),
+                SizedBox(width: 8),
                 Text(
-                  'Location',
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: AppColors.gray900,
+                  'View Location',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
@@ -171,16 +191,12 @@ class NextCollectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWasteChip({
-    required String icon,
-    required String label,
-    required Color color,
-  }) {
+  Widget _buildWasteChip(String icon, String label, Color bgColor) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -189,8 +205,11 @@ class NextCollectionScreen extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: AppTextStyles.labelMedium.copyWith(
-              color: AppColors.gray900,
+            style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
             ),
           ),
         ],
@@ -198,144 +217,142 @@ class NextCollectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildScheduleSection() {
+  Widget _buildScheduleSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Your',
+          'Upcoming',
           style: TextStyle(
-            fontSize: 32,
+            fontFamily: 'Finlandica',
+            fontSize: 22,
             fontWeight: FontWeight.w700,
-            color: AppColors.gray900,
+            color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'upcoming collections',
-          style: AppTextStyles.bodyLarge.copyWith(
-            color: AppColors.gray700,
+        const SizedBox(height: 4),
+        const Text(
+          'Your scheduled collections',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 14,
+            color: AppColors.textTertiary,
           ),
         ),
         const SizedBox(height: 16),
-        
-        // Placeholder for schedule list
-        Container(
-          height: 200,
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              'Schedule list coming soon',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.gray500,
+        // Schedule items
+        _buildScheduleItem('May 29', 'Paper & Cardboard', '📦', true),
+        const SizedBox(height: 10),
+        _buildScheduleItem('Jun 5', 'PMD & Plastics', '♻️', false),
+        const SizedBox(height: 10),
+        _buildScheduleItem('Jun 12', 'Residual Waste', '🗑️', false),
+        const SizedBox(height: 24),
+        // Action buttons
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/create-pickup'),
+                child: Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Schedule Pickup',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(width: 12),
+            GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/sorting-guide'),
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border, width: 1),
+                ),
+                child: const Icon(Icons.sort_rounded,
+                    color: AppColors.primaryGreen, size: 22),
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildBottomNavigation(BuildContext context) {
+  Widget _buildScheduleItem(
+      String date, String type, String emoji, bool isNext) {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                icon: Icons.home_outlined,
-                label: 'Home',
-                isActive: true,
-                color: AppColors.primary500,
-              ),
-              _buildNavItem(
-                icon: Icons.calendar_today_outlined,
-                label: 'Calendar',
-                isActive: false,
-                color: AppColors.gray500,
-              ),
-              _buildNavItem(
-                icon: Icons.location_on_outlined,
-                label: 'Location',
-                isActive: false,
-                color: AppColors.gray500,
-              ),
-              _buildNavItem(
-                icon: Icons.sort,
-                label: 'Sorting',
-                isActive: false,
-                color: AppColors.gray500,
-                onTap: () {
-                  Navigator.pushNamed(context, '/sorting-guide');
-                },
-              ),
-              _buildNavItem(
-                icon: Icons.menu,
-                label: 'Menu',
-                isActive: false,
-                color: AppColors.gray500,
-              ),
-            ],
-          ),
+        color: isNext ? AppColors.primaryGreen.withValues(alpha: 0.08) : AppColors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isNext
+              ? AppColors.primaryGreen.withValues(alpha: 0.3)
+              : AppColors.border,
+          width: 1,
         ),
       ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required Color color,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: color,
+          Text(emoji, style: const TextStyle(fontSize: 24)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  type,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  date,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
             ),
           ),
-          if (isActive)
+          if (isNext)
             Container(
-              margin: const EdgeInsets.only(top: 4),
-              height: 3,
-              width: 32,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(2),
+                color: AppColors.primaryGreen,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Next',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
             ),
         ],

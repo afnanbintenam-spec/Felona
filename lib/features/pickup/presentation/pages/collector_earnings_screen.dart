@@ -82,7 +82,7 @@ class _CollectorEarningsScreenState extends State<CollectorEarningsScreen> {
                     children: [
                       Spacing.gap16,
                       const Text('Earnings', style: TextStyle(
-                        fontFamily: 'Inter', fontSize: 24, fontWeight: FontWeight.w700,
+                        fontFamily: 'Finlandica', fontSize: 26, fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       )),
                       Spacing.gap24,
@@ -97,7 +97,7 @@ class _CollectorEarningsScreenState extends State<CollectorEarningsScreen> {
 
                       // Transaction history
                       const Text('Recent Transactions', style: TextStyle(
-                        fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w600,
+                        fontFamily: 'Finlandica', fontSize: 19, fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       )),
                       Spacing.gap16,

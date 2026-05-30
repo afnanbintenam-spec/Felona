@@ -90,7 +90,10 @@ class _EcoScoreScreenState extends State<EcoScoreScreen>
                 // Header
                 Text(
                   'Eco Score',
-                  style: AppTextStyles.headlineLarge.copyWith(
+                  style: const TextStyle(
+                    fontFamily: 'Finlandica',
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -109,9 +112,12 @@ class _EcoScoreScreenState extends State<EcoScoreScreen>
                 const SizedBox(height: 32),
 
                 // Milestones
-                Text(
+                const Text(
                   'Milestones',
-                  style: AppTextStyles.headlineSmall.copyWith(
+                  style: TextStyle(
+                    fontFamily: 'Finlandica',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -121,9 +127,12 @@ class _EcoScoreScreenState extends State<EcoScoreScreen>
                 const SizedBox(height: 32),
 
                 // Point History
-                Text(
+                const Text(
                   'Point History',
-                  style: AppTextStyles.headlineSmall.copyWith(
+                  style: TextStyle(
+                    fontFamily: 'Finlandica',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
                 ),

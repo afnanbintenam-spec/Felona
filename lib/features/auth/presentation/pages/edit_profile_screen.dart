@@ -111,9 +111,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: AppColors.background,
+        foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
@@ -122,8 +123,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         title: const Text(
           'Edit Profile',
           style: TextStyle(
-            fontFamily: 'Inter',
-            fontSize: 18,
+            fontFamily: 'Finlandica',
+            fontSize: 20,
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),

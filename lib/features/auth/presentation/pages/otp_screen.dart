@@ -9,8 +9,7 @@ import 'package:felo_na/core/network/api_client.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_event.dart';
 
-/// OTP Verification Screen — 6-digit code input
-/// Purposes: 'email_verification' (after register/login) or 'password_reset'
+/// OTP Verification — Klima-inspired with nature background.
 class OtpScreen extends StatefulWidget {
   final String email;
   final String purpose;
@@ -102,12 +101,10 @@ class _OtpScreenState extends State<OtpScreen> {
 
       if (response.statusCode == 200) {
         if (_isVerification) {
-          // Email verified — got user + tokens
           final token = response.data['token'] as String;
           final refreshToken = response.data['refreshToken'] as String?;
           final userJson = response.data['user'] as Map<String, dynamic>;
 
-          // Dispatch event to AuthBloc (proper pattern)
           context.read<AuthBloc>().add(
                 VerificationCompleted(
                   token: token,
@@ -124,7 +121,6 @@ class _OtpScreenState extends State<OtpScreen> {
           );
           Navigator.pushNamedAndRemoveUntil(context, '/main', (_) => false);
         } else {
-          // Password reset OTP verified
           final resetToken = response.data['reset_token'] as String;
           Navigator.pushReplacementNamed(
             context,
@@ -175,7 +171,6 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
         );
         _startTimer();
-        // Clear inputs
         for (final c in _controllers) c.clear();
         _focusNodes[0].requestFocus();
       } else {
@@ -208,7 +203,6 @@ class _OtpScreenState extends State<OtpScreen> {
     }
     setState(() {});
 
-    // Auto-verify when all 6 digits entered (with guard against duplicate calls)
     if (_otp.length == 6 && !_loading && !_autoVerifyTriggered) {
       _autoVerifyTriggered = true;
       _verifyOtp();
@@ -220,142 +214,188 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: Spacing.pagePadding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Spacing.gap16,
-              // Back button
-              Align(
-                alignment: Alignment.centerLeft,
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.border, width: 1),
-                    ),
-                    child: const Icon(Icons.arrow_back_ios_rounded,
-                        color: AppColors.textSecondary, size: 18),
-                  ),
-                ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background
+          Image.asset(
+            'Assets/backgrounds/bg_bins.jpg',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) =>
+                Container(color: AppColors.background),
+          ),
+          // Overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.5),
+                  Colors.black.withValues(alpha: 0.85),
+                ],
               ),
-              Spacing.gap32,
-              Center(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _isVerification
-                        ? Icons.mark_email_read_rounded
-                        : Icons.lock_reset_rounded,
-                    color: AppColors.primaryGreen,
-                    size: 36,
-                  ),
-                ),
-              ),
-              Spacing.gap24,
-              Text(
-                _isVerification ? 'Verify your email' : 'Verify your code',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              Spacing.gap8,
-              Text(
-                _isVerification
-                    ? 'We sent a 6-digit code to\n${widget.email}'
-                    : 'Enter the 6-digit code sent to\n${widget.email}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 14,
-                  color: AppColors.textTertiary,
-                  height: 1.5,
-                ),
-              ),
-              Spacing.gap32,
-              // OTP boxes
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(6, _otpBox),
-              ),
-              Spacing.gap24,
-              Center(
-                child: _canResend
-                    ? GestureDetector(
-                        onTap: _resendOtp,
-                        child: const Text(
-                          'Resend Code',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryGreen,
-                          ),
+            ),
+          ),
+          // Content
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: Spacing.pagePadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Spacing.gap16,
+                  // Back button
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              width: 1),
                         ),
-                      )
-                    : Text(
-                        'Resend in 0:${_secondsRemaining.toString().padLeft(2, '0')}',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          color: AppColors.textTertiary,
-                        ),
+                        child: const Icon(Icons.arrow_back_ios_rounded,
+                            color: Colors.white, size: 18),
                       ),
-              ),
-              Spacing.gap32,
-              // Verify button
-              GestureDetector(
-                onTap: _loading ? null : _verifyOtp,
-                child: Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: _otp.length == 6
-                        ? AppColors.primaryGreen
-                        : AppColors.primaryGreen.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  child: Center(
-                    child: _loading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                  Spacing.gap32,
+                  // Icon
+                  Center(
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _isVerification
+                            ? Icons.mark_email_read_rounded
+                            : Icons.lock_reset_rounded,
+                        color: AppColors.primaryGreen,
+                        size: 36,
+                      ),
+                    ),
+                  ),
+                  Spacing.gap24,
+                  Text(
+                    _isVerification ? 'Verify your email' : 'Verify your code',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Finlandica',
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Spacing.gap8,
+                  Text(
+                    _isVerification
+                        ? 'We sent a 6-digit code to\n${widget.email}'
+                        : 'Enter the 6-digit code sent to\n${widget.email}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.7),
+                      height: 1.5,
+                    ),
+                  ),
+                  Spacing.gap32,
+                  // OTP boxes in glass card
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          width: 1),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: List.generate(6, _otpBox),
+                    ),
+                  ),
+                  Spacing.gap24,
+                  Center(
+                    child: _canResend
+                        ? GestureDetector(
+                            onTap: _resendOtp,
+                            child: const Text(
+                              'Resend Code',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryGreen,
+                              ),
                             ),
                           )
-                        : const Text(
-                            'Verify',
+                        : Text(
+                            'Resend in 0:${_secondsRemaining.toString().padLeft(2, '0')}',
                             style: TextStyle(
                               fontFamily: 'Inter',
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.5),
                             ),
                           ),
                   ),
-                ),
+                  Spacing.gap32,
+                  // Verify button
+                  GestureDetector(
+                    onTap: _loading ? null : _verifyOtp,
+                    child: Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: _otp.length == 6
+                            ? AppColors.primaryGreen
+                            : AppColors.primaryGreen.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: _otp.length == 6
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primaryGreen
+                                      .withValues(alpha: 0.4),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Center(
+                        child: _loading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Text(
+                                'Verify',
+                                style: TextStyle(
+                                  fontFamily: 'Inter',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                  Spacing.gap16,
+                ],
               ),
-              Spacing.gap16,
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -363,8 +403,8 @@ class _OtpScreenState extends State<OtpScreen> {
   Widget _otpBox(int index) {
     final hasValue = _controllers[index].text.isNotEmpty;
     return SizedBox(
-      width: 48,
-      height: 56,
+      width: 44,
+      height: 52,
       child: TextField(
         controller: _controllers[index],
         focusNode: _focusNodes[index],
@@ -379,24 +419,28 @@ class _OtpScreenState extends State<OtpScreen> {
           fontFamily: 'Inter',
           fontSize: 22,
           fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+          color: Colors.white,
         ),
         decoration: InputDecoration(
           counterText: '',
           filled: true,
-          fillColor: AppColors.card,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          fillColor: Colors.white.withValues(alpha: 0.08),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: hasValue ? AppColors.primaryGreen : AppColors.border,
+              color: hasValue
+                  ? AppColors.primaryGreen
+                  : Colors.white.withValues(alpha: 0.2),
               width: hasValue ? 1.5 : 1,
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: hasValue ? AppColors.primaryGreen : AppColors.border,
+              color: hasValue
+                  ? AppColors.primaryGreen
+                  : Colors.white.withValues(alpha: 0.2),
               width: hasValue ? 1.5 : 1,
             ),
           ),

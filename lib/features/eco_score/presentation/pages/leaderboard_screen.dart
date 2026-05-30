@@ -74,7 +74,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       Spacing.hGap12,
                       const Expanded(
                         child: Text('Leaderboard', style: TextStyle(
-                          fontFamily: 'Inter', fontSize: 20, fontWeight: FontWeight.w700,
+                          fontFamily: 'Finlandica', fontSize: 22, fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                         )),
                       ),
@@ -229,7 +229,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Rankings', style: TextStyle(
-          fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w600,
+          fontFamily: 'Finlandica', fontSize: 19, fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         )),
         Spacing.gap12,

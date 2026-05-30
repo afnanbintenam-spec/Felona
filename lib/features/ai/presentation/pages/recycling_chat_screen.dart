@@ -92,7 +92,7 @@ class _RecyclingChatScreenState extends State<RecyclingChatScreen> {
             Text('🌱', style: TextStyle(fontSize: 20)),
             SizedBox(width: 8),
             Text('FeloNa AI', style: TextStyle(
-              fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w600,
+              fontFamily: 'Finlandica', fontSize: 20, fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             )),
           ],

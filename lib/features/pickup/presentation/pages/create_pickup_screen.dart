@@ -102,10 +102,10 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A0A),
-        foregroundColor: AppColors.gray900,
+        backgroundColor: AppColors.background,
+        foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
@@ -113,8 +113,11 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
         ),
         title: Text(
           'Schedule a rescue 🚛',
-          style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.gray900,
+          style: TextStyle(
+            fontFamily: 'Finlandica',
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       ),

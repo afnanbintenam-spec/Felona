@@ -98,7 +98,7 @@ class _CollectorJobsScreenState extends State<CollectorJobsScreen> {
                 children: [
                   Spacing.gap16,
                   const Text('Available Jobs', style: TextStyle(
-                    fontFamily: 'Inter', fontSize: 24, fontWeight: FontWeight.w700,
+                    fontFamily: 'Finlandica', fontSize: 26, fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   )),
                   Spacing.gap8,

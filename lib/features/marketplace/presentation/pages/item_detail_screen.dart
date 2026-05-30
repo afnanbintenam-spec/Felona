@@ -103,15 +103,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final listing = args as Listing? ?? widget.listing!;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           // App Bar with Image Carousel
           SliverAppBar(
             expandedHeight: 300,
             pinned: true,
-            backgroundColor: const Color(0xFF0A0A0A),
-            foregroundColor: AppColors.gray900,
+            backgroundColor: AppColors.background,
+            foregroundColor: Colors.white,
             leading: IconButton(
               icon: Container(
                 padding: const EdgeInsets.all(8),

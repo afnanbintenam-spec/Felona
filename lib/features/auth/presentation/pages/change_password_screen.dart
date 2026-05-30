@@ -112,7 +112,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 Spacing.gap24,
                 const Text('Change Password', textAlign: TextAlign.center, style: TextStyle(
-                  fontFamily: 'Inter', fontSize: 24, fontWeight: FontWeight.w700,
+                  fontFamily: 'Finlandica', fontSize: 26, fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 )),
                 Spacing.gap8,

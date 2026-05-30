@@ -116,6 +116,7 @@ flutter:
     - Assets/logo_app.png
     - Assets/splash_illustration.png
     - Assets/illustrations/
+    - Assets/backgrounds/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -139,6 +140,20 @@ flutter:
           weight: 600
         - asset: fonts/Inter-Bold.ttf
           weight: 700
+    - family: Finlandica
+      fonts:
+        - asset: Assets/Fonts/static/FinlandicaHeadline-Regular.ttf
+          weight: 400
+        - asset: Assets/Fonts/static/FinlandicaHeadline-Medium.ttf
+          weight: 500
+        - asset: Assets/Fonts/static/FinlandicaHeadline-SemiBold.ttf
+          weight: 600
+        - asset: Assets/Fonts/static/FinlandicaHeadline-Bold.ttf
+          weight: 700
+        - asset: Assets/Fonts/static/FinlandicaHeadline-ExtraBold.ttf
+          weight: 800
+        - asset: Assets/Fonts/static/FinlandicaHeadline-Black.ttf
+          weight: 900
 
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package

@@ -75,7 +75,7 @@ class _MyOffersScreenState extends State<MyOffersScreen>
                 children: [
                   Spacing.gap16,
                   const Text('My Offers', style: TextStyle(
-                    fontFamily: 'Inter', fontSize: 24, fontWeight: FontWeight.w700,
+                    fontFamily: 'Finlandica', fontSize: 26, fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   )),
                   Spacing.gap8,

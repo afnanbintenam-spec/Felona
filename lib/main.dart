@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/constants/app_theme.dart';
@@ -57,14 +58,37 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp();
+  if (kIsWeb) {
+    // Firebase web app not yet configured in Firebase Console.
+    // To enable: run `flutterfire configure` or add a web app in Firebase Console.
+    // For now, skip Firebase on web so the app can load.
+    try {
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: 'AIzaSyBAbRDyGgXLkwyMtC-fz3e1vGqGsyG1k98',
+          appId: '1:1062477866360:android:18a95740dd3341fdd5148d',
+          messagingSenderId: '1062477866360',
+          projectId: 'felona-72453',
+          storageBucket: 'felona-72453.firebasestorage.app',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Firebase init failed on web: $e');
+    }
+  } else {
+    await Firebase.initializeApp();
+  }
 
   // Initialize dependency injection container
   await di.initializeDependencies();
 
   // Initialize push notifications
-  final pushService = di.sl<PushNotificationService>();
-  await pushService.initialize();
+  try {
+    final pushService = di.sl<PushNotificationService>();
+    await pushService.initialize();
+  } catch (e) {
+    debugPrint('Push notification init failed: $e');
+  }
 
   runApp(const FeloNaApp());
 }

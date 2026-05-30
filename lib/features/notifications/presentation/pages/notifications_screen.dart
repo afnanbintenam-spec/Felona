@@ -38,11 +38,15 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Notifications'),
-        backgroundColor: const Color(0xFF0A0A0A),
-        foregroundColor: AppColors.gray900,
+        title: const Text('Notifications', style: TextStyle(
+          fontFamily: 'Finlandica',
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        )),
+        backgroundColor: AppColors.background,
+        foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),

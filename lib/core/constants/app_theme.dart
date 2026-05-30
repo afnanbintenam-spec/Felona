@@ -1,61 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 
-/// Premium Dark Theme Configuration
-/// Modern fintech-inspired design with high contrast and neon accents
+/// Premium Dark Theme — Klima-inspired
+/// Headlines: Finlandica | Body: Inter
+/// Nature-forward, clean, high-contrast
 class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      
-      // Color Scheme - Premium Dark
+
+      // Color Scheme
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.primary500, // Vibrant Lime
-        onPrimary: AppColors.black, // Black text on lime
-        secondary: AppColors.secondary500, // Deep Charcoal
-        onSecondary: AppColors.gray900, // White text on charcoal
-        surface: AppColors.black, // Pure black background
-        onSurface: AppColors.gray900, // White text
+        primary: AppColors.primaryGreen,
+        onPrimary: Colors.white,
+        secondary: AppColors.tealGreen,
+        onSecondary: Colors.white,
+        surface: AppColors.background,
+        onSurface: AppColors.textPrimary,
         error: AppColors.error,
-        onError: AppColors.white,
+        onError: Colors.white,
       ),
 
-      // Scaffold Background - Pure Black
-      scaffoldBackgroundColor: AppColors.black,
+      // Scaffold
+      scaffoldBackgroundColor: AppColors.background,
 
-      // App Bar Theme - Transparent with white text
+      // App Bar
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
-        iconTheme: IconThemeData(color: AppColors.gray900),
+        centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.white),
         titleTextStyle: TextStyle(
-          color: AppColors.gray900,
+          color: Colors.white,
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          fontFamily: 'Inter',
+          fontFamily: 'Finlandica',
         ),
       ),
 
-      // Card Theme - Deep Charcoal with high radius
+      // Card
       cardTheme: CardThemeData(
-        color: AppColors.cardSurface,
+        color: AppColors.card,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28), // High radius
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
 
-      // Elevated Button - Pill-shaped with lime accent
+      // Elevated Button
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary500,
-          foregroundColor: AppColors.black,
+          backgroundColor: AppColors.primaryGreen,
+          foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100), // Pill shape
+            borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(
             fontSize: 16,
@@ -65,14 +66,14 @@ class AppTheme {
         ),
       ),
 
-      // Outlined Button - Pill-shaped with lime border
+      // Outlined Button
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary500,
-          side: const BorderSide(color: AppColors.primary500, width: 2),
+          foregroundColor: AppColors.primaryGreen,
+          side: const BorderSide(color: AppColors.primaryGreen, width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100), // Pill shape
+            borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(
             fontSize: 16,
@@ -82,10 +83,10 @@ class AppTheme {
         ),
       ),
 
-      // Text Button - Lime text
+      // Text Button
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary500,
+          foregroundColor: AppColors.primaryGreen,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           textStyle: const TextStyle(
             fontSize: 14,
@@ -95,153 +96,131 @@ class AppTheme {
         ),
       ),
 
-      // Input Decoration - High radius with charcoal background
+      // Input Decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.secondary500,
+        fillColor: AppColors.card,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20), // High radius
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: AppColors.border, width: 1),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: AppColors.border, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color: AppColors.primary500, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color: AppColors.error, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         hintStyle: const TextStyle(
-          color: AppColors.gray500,
+          color: AppColors.textMuted,
           fontFamily: 'Inter',
         ),
         labelStyle: const TextStyle(
-          color: AppColors.gray700,
+          color: AppColors.textTertiary,
           fontFamily: 'Inter',
         ),
       ),
 
-      // Bottom Navigation Bar - Floating pill shape
+      // Bottom Navigation Bar
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.secondary500,
-        selectedItemColor: AppColors.primary500,
-        unselectedItemColor: AppColors.gray500,
+        backgroundColor: AppColors.card,
+        selectedItemColor: AppColors.primaryGreen,
+        unselectedItemColor: AppColors.textMuted,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
 
-      // Floating Action Button - Lime with black icon
+      // FAB
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primary500,
-        foregroundColor: AppColors.black,
+        backgroundColor: AppColors.primaryGreen,
+        foregroundColor: Colors.white,
         elevation: 0,
         shape: CircleBorder(),
       ),
 
-      // Chip Theme - Pill-shaped
+      // Chip
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.secondary500,
-        selectedColor: AppColors.primary500,
+        backgroundColor: AppColors.card,
+        selectedColor: AppColors.primaryGreen,
         labelStyle: const TextStyle(
-          color: AppColors.gray900,
+          color: AppColors.textPrimary,
           fontFamily: 'Inter',
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(100), // Pill shape
+          borderRadius: BorderRadius.circular(12),
         ),
       ),
 
-      // Divider - Subtle charcoal
+      // Divider
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
         thickness: 1,
       ),
 
-      // Icon Theme - Thin stroke outline icons
+      // Icon
       iconTheme: const IconThemeData(
-        color: AppColors.gray900,
+        color: AppColors.textSecondary,
         size: 24,
       ),
 
-      // Typography - Geometric Sans-Serif (Inter)
+      // Typography
       fontFamily: 'Inter',
       textTheme: const TextTheme(
         displayLarge: TextStyle(
-          fontSize: 32,
-          fontWeight: FontWeight.w700,
-          color: AppColors.gray900,
-          fontFamily: 'Inter',
+          fontSize: 36, fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary, fontFamily: 'Finlandica',
+          letterSpacing: -0.5,
         ),
         displayMedium: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
-          color: AppColors.gray900,
-          fontFamily: 'Inter',
+          fontSize: 30, fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary, fontFamily: 'Finlandica',
+          letterSpacing: -0.3,
         ),
         displaySmall: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-          color: AppColors.gray900,
-          fontFamily: 'Inter',
+          fontSize: 26, fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary, fontFamily: 'Finlandica',
         ),
         headlineLarge: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          color: AppColors.gray900,
-          fontFamily: 'Inter',
+          fontSize: 22, fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary, fontFamily: 'Finlandica',
         ),
         headlineMedium: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: AppColors.gray900,
-          fontFamily: 'Inter',
+          fontSize: 20, fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary, fontFamily: 'Finlandica',
         ),
         headlineSmall: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w500,
-          color: AppColors.gray900,
-          fontFamily: 'Inter',
+          fontSize: 18, fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary, fontFamily: 'Finlandica',
         ),
         bodyLarge: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          color: AppColors.gray900,
-          fontFamily: 'Inter',
+          fontSize: 16, fontWeight: FontWeight.w400,
+          color: AppColors.textPrimary, fontFamily: 'Inter',
         ),
         bodyMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: AppColors.gray700,
-          fontFamily: 'Inter',
+          fontSize: 14, fontWeight: FontWeight.w400,
+          color: AppColors.textSecondary, fontFamily: 'Inter',
         ),
         bodySmall: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          color: AppColors.gray600,
-          fontFamily: 'Inter',
+          fontSize: 12, fontWeight: FontWeight.w400,
+          color: AppColors.textTertiary, fontFamily: 'Inter',
         ),
         labelLarge: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: AppColors.gray900,
-          fontFamily: 'Inter',
+          fontSize: 14, fontWeight: FontWeight.w500,
+          color: AppColors.textPrimary, fontFamily: 'Inter',
         ),
         labelMedium: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: AppColors.gray700,
-          fontFamily: 'Inter',
+          fontSize: 12, fontWeight: FontWeight.w500,
+          color: AppColors.textSecondary, fontFamily: 'Inter',
         ),
         labelSmall: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w500,
-          color: AppColors.gray600,
-          fontFamily: 'Inter',
+          fontSize: 10, fontWeight: FontWeight.w500,
+          color: AppColors.textTertiary, fontFamily: 'Inter',
         ),
       ),
     );

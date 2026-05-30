@@ -148,7 +148,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
               )),
               SizedBox(height: 2),
               Text('Hello, Buyer 👋', style: TextStyle(
-                fontFamily: 'Inter', fontSize: 20, fontWeight: FontWeight.w700,
+                fontFamily: 'Finlandica', fontSize: 22, fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               )),
             ],
@@ -264,7 +264,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('My Offers', style: TextStyle(
-          fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w600,
+          fontFamily: 'Finlandica', fontSize: 19, fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         )),
         Spacing.gap12,
@@ -363,7 +363,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Saved Items', style: TextStyle(
-          fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w600,
+          fontFamily: 'Finlandica', fontSize: 19, fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         )),
         Spacing.gap12,
@@ -431,7 +431,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Recent Purchases', style: TextStyle(
-          fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w600,
+          fontFamily: 'Finlandica', fontSize: 19, fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         )),
         Spacing.gap12,

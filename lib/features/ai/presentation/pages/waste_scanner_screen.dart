@@ -103,7 +103,7 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
             Icon(Icons.auto_awesome_rounded, color: AppColors.primaryGreen, size: 18),
             SizedBox(width: 8),
             Text('AI Waste Scanner', style: TextStyle(
-              fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w600,
+              fontFamily: 'Finlandica', fontSize: 18, fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             )),
           ],

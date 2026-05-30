@@ -144,7 +144,7 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
               )),
               SizedBox(height: 2),
               Text('Hello, Collector 👋', style: TextStyle(
-                fontFamily: 'Inter', fontSize: 20, fontWeight: FontWeight.w700,
+                fontFamily: 'Finlandica', fontSize: 22, fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               )),
             ],
@@ -386,7 +386,7 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Recent Jobs', style: TextStyle(
-          fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w600,
+          fontFamily: 'Finlandica', fontSize: 19, fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         )),
         Spacing.gap12,
