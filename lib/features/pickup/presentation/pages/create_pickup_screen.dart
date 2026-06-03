@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/app_text_styles.dart';
 import 'package:felo_na/core/constants/enums.dart';
@@ -31,6 +33,9 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
   final _notesController = TextEditingController();
   
   WasteCategory? _selectedCategory;
+  double? _pickedLatitude;
+  double? _pickedLongitude;
+  bool _locating = false;
 
   @override
   void dispose() {
@@ -61,14 +66,79 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
     return null;
   }
 
-  void _useCurrentLocation() {
-    // TODO: Implement location picker
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Location picker coming soon!'),
-        backgroundColor: AppColors.info,
-      ),
-    );
+  Future<void> _useCurrentLocation() async {
+    setState(() => _locating = true);
+    try {
+      // Check and request permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Location permission denied'),
+            backgroundColor: AppColors.error,
+          ));
+        }
+        return;
+      }
+
+      // Check if location services are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Please enable location services'),
+            backgroundColor: AppColors.warning,
+          ));
+        }
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      // Reverse geocode to get a human-readable address
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      String address = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        final parts = [
+          p.street,
+          p.subLocality,
+          p.locality,
+          p.administrativeArea,
+        ].where((s) => s != null && s.isNotEmpty).toList();
+        if (parts.isNotEmpty) address = parts.join(', ');
+      }
+
+      if (mounted) {
+        setState(() {
+          _pickedLatitude = position.latitude;
+          _pickedLongitude = position.longitude;
+          _addressController.text = address;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Could not get location: $e'),
+          backgroundColor: AppColors.error,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
   }
 
   void _handleSubmit() {
@@ -92,6 +162,8 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
             category: _selectedCategory!,
             estimatedWeight: double.parse(_weightController.text),
             address: _addressController.text.trim(),
+            latitude: _pickedLatitude,
+            longitude: _pickedLongitude,
             notes: _notesController.text.trim().isEmpty
                 ? null
                 : _notesController.text.trim(),
@@ -221,9 +293,19 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
                     ),
                     const SizedBox(height: 8),
                     TextButton.icon(
-                      onPressed: isLoading ? null : _useCurrentLocation,
-                      icon: const Icon(Icons.my_location, size: 18),
-                      label: const Text('Use Current Location'),
+                      onPressed: (isLoading || _locating) ? null : _useCurrentLocation,
+                      icon: _locating
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryGreen),
+                            )
+                          : const Icon(Icons.my_location, size: 18),
+                      label: Text(_locating
+                          ? 'Getting location...'
+                          : 'Use Current Location'),
                     ),
                     const SizedBox(height: 16),
 

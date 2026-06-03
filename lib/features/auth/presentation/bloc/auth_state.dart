@@ -78,3 +78,8 @@ class ProfilePictureUploaded extends AuthState {
   @override
   List<Object?> get props => [user];
 }
+
+/// State when account is successfully deleted.
+class AccountDeleted extends AuthState {
+  const AccountDeleted();
+}

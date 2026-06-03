@@ -45,6 +45,10 @@ Future<void> initializeDependencies() async {
       aOptions: AndroidOptions(
         encryptedSharedPreferences: true,
       ),
+      webOptions: WebOptions(
+        dbName: 'felona_auth',
+        publicKey: 'felona_public_key',
+      ),
     ),
   );
 

@@ -23,6 +23,9 @@ abstract class MarketplaceRemoteDataSource {
   Future<void> toggleFavorite(String listingId);
   Future<ListingModel> getListingById(String id);
   Future<void> deleteListing(String id);
+  Future<List<dynamic>> getReceivedOffers();
+  Future<Map<String, dynamic>> acceptOffer(String offerId);
+  Future<Map<String, dynamic>> rejectOffer(String offerId);
 }
 
 class MarketplaceRemoteDataSourceImpl implements MarketplaceRemoteDataSource {
@@ -172,6 +175,38 @@ class MarketplaceRemoteDataSourceImpl implements MarketplaceRemoteDataSource {
   Future<void> deleteListing(String id) async {
     try {
       await _apiClient.delete('$_listingsPath/$id');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<List<dynamic>> getReceivedOffers() async {
+    try {
+      final response = await _apiClient.get('/offers/received');
+      return (response.data['offers'] as List<dynamic>?) ?? [];
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> acceptOffer(String offerId) async {
+    try {
+      final response =
+          await _apiClient.patch('/offers/$offerId/accept');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> rejectOffer(String offerId) async {
+    try {
+      final response =
+          await _apiClient.patch('/offers/$offerId/reject');
+      return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

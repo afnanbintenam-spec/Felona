@@ -188,7 +188,7 @@ router.post('/suggest-price', authenticate, [
     const baseEstimate = EcoImpactEngine.estimateValue({ category, condition });
 
     // Optionally, ask AI to refine the estimate
-    const prompt = `Suggest a realistic resale price range (USD) for this second-hand item:
+    const prompt = `Suggest a realistic resale price range (BDT/Taka) for this second-hand item:
 - Item: ${item_name}
 - Category: ${category}
 - Condition: ${condition}
@@ -199,7 +199,7 @@ Respond with ONLY valid JSON: {"min": <number>, "max": <number>, "tip": "<one se
     let tip = `Based on category and condition, this is a fair price range.`;
 
     try {
-      const result = await aiVision.model.generateContent(prompt);
+      const result = await aiVision.textModel.generateContent(prompt);
       const text = result.response.text();
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {

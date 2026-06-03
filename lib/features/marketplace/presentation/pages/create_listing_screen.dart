@@ -321,13 +321,13 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
 
                     // Price
                     CustomTextField(
-                      label: 'Price (USD)',
-                      hintText: 'Enter price',
+                      label: 'Price (৳)',
+                      hintText: 'Enter price in Taka',
                       controller: _priceController,
                       validator: _validatePrice,
                       keyboardType: TextInputType.number,
                       enabled: !isLoading,
-                      prefixIcon: const Icon(Icons.attach_money),
+                      prefixIcon: const Icon(Icons.currency_exchange),
                     ),
                     const SizedBox(height: 16),
 

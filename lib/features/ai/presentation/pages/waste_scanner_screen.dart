@@ -1,11 +1,12 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
 import 'package:felo_na/core/network/api_client.dart';
+import 'package:felo_na/core/network/auth_interceptor.dart';
+import 'package:felo_na/core/network/web_storage.dart';
 
 /// AI Waste Scanner — Backend-powered with eco impact engine
 /// Uses /ai/scan endpoint which returns full analysis + saves to DB
@@ -18,7 +19,7 @@ class WasteScannerScreen extends StatefulWidget {
 
 class _WasteScannerScreenState extends State<WasteScannerScreen> {
   final _dio = Dio(BaseOptions(baseUrl: ApiClient.baseUrl));
-  final _storage = const FlutterSecureStorage();
+  final _storage = AppStorage();
   final _picker = ImagePicker();
 
   bool _isScanning = false;
@@ -46,7 +47,7 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
       });
 
       // Get auth token
-      final token = await _storage.read(key: 'auth_token');
+      final token = await _storage.read(key: TokenKeys.accessToken);
       if (token == null) {
         setState(() {
           _error = 'Please log in to scan items';
@@ -582,7 +583,7 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
                   fontFamily: 'Inter', fontSize: 12, color: AppColors.textTertiary,
                 )),
                 Text(
-                  '\$${_fmtNum(value['min'])} - \$${_fmtNum(value['max'])}',
+                  '৳${_fmtNum(value['min'])} - ৳${_fmtNum(value['max'])}',
                   style: const TextStyle(
                     fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,

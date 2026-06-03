@@ -79,7 +79,6 @@ const Pickup = sequelize.define('Pickup', {
   qr_token: {
     type: DataTypes.STRING(64),
     allowNull: true,
-    unique: true,
     comment: '128-bit token for QR verification',
   },
 
@@ -130,6 +129,9 @@ const Pickup = sequelize.define('Pickup', {
   timestamps: true,
   underscored: true,
   paranoid: true,
+  indexes: [
+    { unique: true, fields: ['qr_token'], where: { qr_token: { [require('sequelize').Op.ne]: null } } },
+  ],
 });
 
 module.exports = Pickup;

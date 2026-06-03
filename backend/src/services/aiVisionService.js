@@ -9,8 +9,17 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 class AIVisionService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    // Vision model: responseMimeType forces clean JSON — avoids thinking
+    // preamble and markdown code fences that break JSON.parse on gemini-2.5-flash
     this.model = this.genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash-lite',
+      model: 'gemini-2.5-flash',
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
+    });
+    // Chat/text model: plain text responses (JSON mime type would break conversation)
+    this.textModel = this.genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
     });
   }
 
@@ -21,23 +30,22 @@ class AIVisionService {
    * @returns {Promise<Object>} Structured analysis
    */
   async analyzeWaste(imageBuffer, mimeType = 'image/jpeg') {
-    const prompt = `Analyze this image of a waste or recyclable item. Respond with ONLY valid JSON (no markdown, no explanation):
+    const prompt = `You are a waste classification AI. Analyze the image and identify the waste or recyclable item.
 
-{
-  "item_name": "specific item name (e.g. 'PET water bottle', 'cardboard box')",
-  "material": "primary material (e.g. 'PET plastic', 'cardboard', 'aluminum')",
-  "category": "one of: plastic, metal, paper, glass, electronics, organic, textile, mixed, unknown",
-  "is_recyclable": "yes, no, or partially",
-  "confidence": 0.0 to 1.0,
-  "estimated_weight_kg": estimated weight in kg (e.g. 0.3),
-  "condition": "one of: new, like_new, good, fair, poor",
-  "disposal_method": "one sentence on how to dispose/recycle properly",
-  "eco_tip": "one short encouraging tip about this item type",
-  "has_resale_value": true or false,
-  "raw_description": "brief description of what you see"
-}
+Return a JSON object with these exact fields:
+- item_name: specific name like "Cardboard box", "PET water bottle", "Aluminum can"
+- material: primary material like "cardboard", "PET plastic", "aluminum"
+- category: one of exactly: plastic, metal, paper, glass, electronics, organic, textile, mixed, unknown
+- is_recyclable: one of exactly: yes, no, partially
+- confidence: number 0.0–1.0 (use 0.85+ if you can clearly see the item)
+- estimated_weight_kg: realistic weight as a number
+- condition: one of exactly: new, like_new, good, fair, poor
+- disposal_method: one sentence on how to properly dispose or recycle
+- eco_tip: one short encouraging tip
+- has_resale_value: true or false
+- raw_description: one sentence describing what you see
 
-If the image does not show a waste/recyclable item, set category to "unknown", confidence to 0.0, and item_name to "Not identifiable".`;
+Important: cardboard is category "paper". If the item is clearly visible, set confidence to 0.8 or above.`;
 
     try {
       const imagePart = {
@@ -50,13 +58,34 @@ If the image does not show a waste/recyclable item, set category to "unknown", c
       const result = await this.model.generateContent([prompt, imagePart]);
       const text = result.response.text();
 
-      // Extract JSON from response (in case AI wraps it in markdown)
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('AI response did not contain valid JSON');
-      }
+      // Log raw response for debugging (first 500 chars)
+      console.log('🤖 Gemini raw response:', text.substring(0, 500));
 
-      const parsed = JSON.parse(jsonMatch[0]);
+      // With responseMimeType: 'application/json', the response should already
+      // be clean JSON. Still attempt to extract {} in case of any wrapping.
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (_) {
+        // Fallback: strip any accidental markdown fences and find JSON object
+        const cleanText = text
+          .replace(/^```(?:json)?\s*/i, '')
+          .replace(/\s*```\s*$/i, '')
+          .trim();
+
+        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          console.error('❌ No JSON found in Gemini response. Full text:', text);
+          throw new Error('AI response did not contain valid JSON');
+        }
+
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch (parseErr) {
+          console.error('❌ JSON.parse failed on:', jsonMatch[0]);
+          throw new Error('Failed to parse AI JSON: ' + parseErr.message);
+        }
+      }
 
       // Normalize values
       return {
@@ -97,7 +126,7 @@ If the image does not show a waste/recyclable item, set category to "unknown", c
    */
   async chat(message, history = []) {
     try {
-      const chat = this.model.startChat({
+      const chat = this.textModel.startChat({
         history: history.map(h => ({
           role: h.role === 'user' ? 'user' : 'model',
           parts: [{ text: h.text }],

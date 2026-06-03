@@ -93,8 +93,8 @@ class GeminiService {
         'Item: $itemName\n'
         'Condition: $condition\n'
         'Category: $category\n\n'
-        'Respond in format: "Estimated: \$X - \$Y" followed by one sentence explanation. '
-        'Use USD. Be realistic for second-hand items.',
+        'Respond in format: "Estimated: ৳X - ৳Y" followed by one sentence explanation. '
+        'Use BDT (Bangladeshi Taka). Be realistic for second-hand items.',
       ),
     ]);
 

@@ -52,3 +52,13 @@ class NewNotificationReceived extends NotificationsEvent {
   @override
   List<Object?> get props => [data];
 }
+
+/// Event to register the FCM token with the backend.
+class RegisterFcmTokenRequested extends NotificationsEvent {
+  final String token;
+
+  const RegisterFcmTokenRequested({required this.token});
+
+  @override
+  List<Object?> get props => [token];
+}

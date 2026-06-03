@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
@@ -178,7 +178,7 @@ class _CollectorHistoryScreenState extends State<CollectorHistoryScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                isCompleted ? '₦${job['earnings'] ?? job['price'] ?? '0'}' : 'Cancelled',
+                isCompleted ? '৳${job['earnings'] ?? job['price'] ?? '0'}' : 'Cancelled',
                 style: TextStyle(
                   fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600,
                   color: isCompleted ? AppColors.primaryGreen : AppColors.error,

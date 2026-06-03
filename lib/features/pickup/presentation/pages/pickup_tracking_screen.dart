@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/enums.dart';
 import 'package:felo_na/features/pickup/domain/entities/pickup_request.dart';
@@ -143,75 +145,82 @@ class _PickupTrackingScreenState extends State<PickupTrackingScreen> {
   }
 
   Widget _buildMapPlaceholder() {
-    return Container(
-      height: 200,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border, width: 1),
-      ),
-      child: Stack(
-        children: [
-          // Map background placeholder
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.map_rounded,
-                  size: 48,
-                  color: AppColors.primaryGreen.withValues(alpha: 0.5),
+    final hasCollectorLocation = _pickup!.collectorLatitude != null &&
+        _pickup!.collectorLongitude != null;
+    final hasPickupLocation =
+        _pickup!.latitude != null && _pickup!.longitude != null;
+
+    // Default center: collector pos > pickup pos > Dhaka
+    final centerLat = _pickup!.collectorLatitude ??
+        _pickup!.latitude ??
+        23.8103;
+    final centerLng = _pickup!.collectorLongitude ??
+        _pickup!.longitude ??
+        90.4125;
+
+    final Set<Marker> markers = {};
+    if (hasCollectorLocation) {
+      markers.add(Marker(
+        markerId: const MarkerId('collector'),
+        position:
+            LatLng(_pickup!.collectorLatitude!, _pickup!.collectorLongitude!),
+        infoWindow: InfoWindow(
+            title: _pickup!.collectorName ?? 'Collector'),
+        icon:
+            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      ));
+    }
+    if (hasPickupLocation) {
+      markers.add(Marker(
+        markerId: const MarkerId('pickup'),
+        position: LatLng(_pickup!.latitude!, _pickup!.longitude!),
+        infoWindow: const InfoWindow(title: 'Pickup Location'),
+        icon:
+            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+      ));
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: SizedBox(
+        height: 220,
+        child: Stack(
+          children: [
+            GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: LatLng(centerLat, centerLng),
+                zoom: 14,
+              ),
+              markers: markers,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
+              liteModeEnabled: false,
+            ),
+            // Status badge overlay
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(_pickup!.status),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Live Map Tracking',
-                  style: TextStyle(
+                child: Text(
+                  _pickup!.status.displayName,
+                  style: const TextStyle(
                     fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
                   ),
-                ),
-                if (_pickup!.collectorLatitude != null &&
-                    _pickup!.collectorLongitude != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'Collector: ${_pickup!.collectorLatitude!.toStringAsFixed(4)}, ${_pickup!.collectorLongitude!.toStringAsFixed(4)}',
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // Status badge
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: _getStatusColor(_pickup!.status),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _pickup!.status.displayName,
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -598,26 +607,43 @@ class _PickupTrackingScreenState extends State<PickupTrackingScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          // QR Code placeholder — will use qr_flutter
-          Container(
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                _pickup!.qrToken ?? 'QR',
-                style: const TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  color: AppColors.textTertiary,
+          // QR Code — rendered with qr_flutter
+          if (_pickup!.qrToken != null && _pickup!.qrToken!.isNotEmpty)
+            Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: QrImageView(
+                data: _pickup!.qrToken!,
+                version: QrVersions.auto,
+                size: 164,
+                backgroundColor: Colors.white,
+              ),
+            )
+          else
+            Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: Text(
+                  'QR not available',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    color: AppColors.textTertiary,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
-          ),
         ],
       ),
     );

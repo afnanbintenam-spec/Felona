@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
@@ -228,7 +228,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
         Spacing.hGap12,
         Expanded(child: _statCard('$_activeOffers', 'Active Offers', Icons.local_offer_rounded)),
         Spacing.hGap12,
-        Expanded(child: _statCard('₦${_moneySaved.toStringAsFixed(0)}', 'Saved', Icons.savings_rounded)),
+        Expanded(child: _statCard('৳${_moneySaved.toStringAsFixed(0)}', 'Saved', Icons.savings_rounded)),
       ],
     );
   }
@@ -330,7 +330,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '₦${offer['amount'] ?? offer['price'] ?? '0'}',
+                  '৳${offer['amount'] ?? offer['price'] ?? '0'}',
                   style: const TextStyle(
                     fontFamily: 'Inter', fontSize: 12, color: AppColors.textTertiary,
                   ),
@@ -414,7 +414,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
           ),
           Spacing.gap4,
           Text(
-            '₦${item['price'] ?? '0'}',
+            '৳${item['price'] ?? '0'}',
             style: const TextStyle(
               fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w600,
               color: AppColors.primaryGreen,
@@ -487,7 +487,7 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
             ),
           ),
           Text(
-            '₦${purchase['price'] ?? '0'}',
+            '৳${purchase['price'] ?? '0'}',
             style: const TextStyle(
               fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600,
               color: AppColors.primaryGreen,

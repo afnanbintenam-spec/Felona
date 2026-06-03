@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
@@ -216,7 +216,7 @@ class _CollectorJobsScreenState extends State<CollectorJobsScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '₦${((weight is num ? weight : double.tryParse(weight.toString()) ?? 5) * 50).toStringAsFixed(0)}',
+                  '৳${((weight is num ? weight : double.tryParse(weight.toString()) ?? 5) * 50).toStringAsFixed(0)}',
                   style: const TextStyle(
                     fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w700,
                     color: AppColors.primaryGreen,

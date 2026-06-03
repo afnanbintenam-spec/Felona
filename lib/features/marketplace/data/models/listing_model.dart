@@ -25,7 +25,9 @@ class ListingModel extends Listing {
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String,
-      price: (json['price'] as num).toDouble(),
+      price: (json['price'] is String)
+          ? double.parse(json['price'] as String)
+          : (json['price'] as num).toDouble(),
       category: _parseCategory(json['category'] as String),
       imageUrls: (json['image_urls'] as List<dynamic>?)
               ?.map((e) => e.toString())

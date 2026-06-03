@@ -1,8 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/eco_levels.dart';
 import 'package:felo_na/core/constants/spacing.dart';
+import 'package:felo_na/features/auth/domain/entities/user.dart';
+import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 
 /// Dashboard — Klima-inspired clean design with nature header.
 class DashboardScreen extends StatefulWidget {
@@ -15,9 +19,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _ringController;
-
-  // TODO: Replace with real user data from BLoC
-  final int _userPoints = 1250;
 
   @override
   void initState() {
@@ -36,45 +37,58 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeroHeader(context),
-            Padding(
-              padding: Spacing.pagePadding,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Spacing.gap24,
-                  _buildEcoScoreCard(),
-                  Spacing.gap20,
-                  _buildAIScanButton(context),
-                  Spacing.gap20,
-                  _buildStatsRow(),
-                  Spacing.gap20,
-                  _buildUpcomingPickup(context),
-                  Spacing.gap24,
-                  _buildQuickActions(context),
-                  Spacing.gap24,
-                  _buildRecentActivity(),
-                  const SizedBox(height: 100),
-                ],
-              ),
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        // Extract user from auth state; fall back to defaults if not yet loaded
+        final User? user =
+            authState is Authenticated ? authState.user : null;
+        final int userPoints = user?.ecoPoints ?? 0;
+        final String userName = user?.fullName ?? '';
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeroHeader(context, userPoints, userName),
+                Padding(
+                  padding: Spacing.pagePadding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Spacing.gap24,
+                      _buildEcoScoreCard(userPoints),
+                      Spacing.gap20,
+                      _buildAIScanButton(context),
+                      Spacing.gap20,
+                      _buildStatsRow(),
+                      Spacing.gap20,
+                      _buildUpcomingPickup(context),
+                      Spacing.gap24,
+                      _buildQuickActions(context),
+                      Spacing.gap24,
+                      _buildRecentActivity(),
+                      const SizedBox(height: 100),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   // ─── HERO HEADER with background image ────────────────────────
-  Widget _buildHeroHeader(BuildContext context) {
-    final level = EcoLevels.fromPoints(_userPoints);
-    final levelNum = EcoLevels.levelNumber(_userPoints);
+  Widget _buildHeroHeader(BuildContext context, int userPoints, String userName) {
+    final level = EcoLevels.fromPoints(userPoints);
+    final levelNum = EcoLevels.levelNumber(userPoints);
+    // Use first letter of name for avatar, fallback to '?' if name is empty
+    final avatarLetter =
+        userName.isNotEmpty ? userName[0].toUpperCase() : '?';
 
     return Container(
       height: 220,
@@ -131,9 +145,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                           border: Border.all(
                               color: AppColors.primaryGreen, width: 2),
                         ),
-                        child: const Center(
-                          child: Text('A',
-                              style: TextStyle(
+                        child: Center(
+                          child: Text(avatarLetter,
+                              style: const TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -156,13 +170,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text('Hello, Afnan',
-                                style: TextStyle(
-                                  fontFamily: 'Finlandica',
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                )),
+                            Text(
+                              userName.isNotEmpty
+                                  ? 'Hello, $userName'
+                                  : 'Hello!',
+                              style: const TextStyle(
+                                fontFamily: 'Finlandica',
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -203,10 +221,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   // ─── ECO SCORE CARD ───────────────────────────────────────────
-  Widget _buildEcoScoreCard() {
-    final level = EcoLevels.fromPoints(_userPoints);
-    final nextLevel = EcoLevels.nextLevel(_userPoints);
-    final progress = level.progressFor(_userPoints);
+  Widget _buildEcoScoreCard(int userPoints) {
+    final level = EcoLevels.fromPoints(userPoints);
+    final nextLevel = EcoLevels.nextLevel(userPoints);
+    final progress = level.progressFor(userPoints);
 
     return Container(
       width: double.infinity,
@@ -257,7 +275,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$_userPoints eco points',
+                  '$userPoints eco points',
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 16,
@@ -278,7 +296,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 Spacing.gap8,
                 if (nextLevel != null)
                   Text(
-                    '${level.pointsToNext(_userPoints)} pts to ${nextLevel.name} ${nextLevel.emoji}',
+                    '${level.pointsToNext(userPoints)} pts to ${nextLevel.name} ${nextLevel.emoji}',
                     style: const TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12,

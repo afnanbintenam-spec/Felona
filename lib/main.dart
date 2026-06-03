@@ -114,9 +114,24 @@ class _FeloNaAppState extends State<FeloNaApp> {
       _notificationsBloc.add(NewNotificationReceived(data: data));
     };
     pushService.onTokenRefresh = (token) {
-      // Register new token with backend
-      di.sl<NotificationsBloc>(); // Token registration handled via repository
+      // Register refreshed token with backend
+      di.sl<NotificationsBloc>().add(RegisterFcmTokenRequested(token: token));
     };
+
+    // Register the initial FCM token after init
+    _registerInitialFcmToken(pushService);
+  }
+
+  Future<void> _registerInitialFcmToken(
+      PushNotificationService pushService) async {
+    try {
+      final token = await pushService.getToken();
+      if (token != null && token.isNotEmpty) {
+        _notificationsBloc.add(RegisterFcmTokenRequested(token: token));
+      }
+    } catch (e) {
+      debugPrint('[FCM] Initial token registration failed: $e');
+    }
   }
 
   @override

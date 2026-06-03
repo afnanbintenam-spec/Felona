@@ -32,24 +32,28 @@ class ItemDetailScreen extends StatefulWidget {
 class _ItemDetailScreenState extends State<ItemDetailScreen> {
   late PageController _pageController;
   int _currentImageIndex = 0;
-  late Listing _listing;
+  Listing? _listing;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    
-    // Get listing from arguments or use provided listing
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (widget.listing != null) {
+      _listing = widget.listing;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_listing == null) {
       final args = ModalRoute.of(context)?.settings.arguments;
-      if (args != null && args is Listing) {
+      if (args is Listing) {
         setState(() {
           _listing = args;
         });
-      } else if (widget.listing != null) {
-        _listing = widget.listing!;
       }
-    });
+    }
   }
 
   @override
@@ -59,15 +63,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   void _toggleFavorite() {
+    if (_listing == null) return;
     context.read<MarketplaceBloc>().add(
-          ToggleFavoriteRequested(listingId: _listing.id),
+          ToggleFavoriteRequested(listingId: _listing!.id),
         );
     setState(() {
-      _listing = _listing.copyWith(isFavorite: !_listing.isFavorite);
+      _listing = _listing!.copyWith(isFavorite: !_listing!.isFavorite);
     });
   }
 
   void _makeOffer() {
+    if (_listing == null) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -89,18 +95,30 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget build(BuildContext context) {
     // Handle case where listing is not yet loaded
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args == null && widget.listing == null) {
+    final listing = _listing ?? (args is Listing ? args : widget.listing);
+
+    if (listing == null) {
       return Scaffold(
+        backgroundColor: AppColors.background,
         appBar: AppBar(
-          title: const Text('Item Details'),
+          backgroundColor: AppColors.background,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
         body: const Center(
-          child: Text('No item data available'),
+          child: Text('No item data available', style: TextStyle(color: Colors.white)),
         ),
       );
     }
 
-    final listing = args as Listing? ?? widget.listing!;
+    // Cache listing for use in callbacks
+    if (_listing == null || _listing != listing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _listing = listing);
+      });
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -112,46 +130,39 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             pinned: true,
             backgroundColor: AppColors.background,
             foregroundColor: Colors.white,
-            leading: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                    ),
-                  ],
+            leading: Padding(
+              padding: const EdgeInsets.all(8),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.arrow_back_ios_rounded, size: 18, color: Colors.white),
                 ),
-                child: const Icon(Icons.arrow_back, size: 20),
               ),
-              onPressed: () => Navigator.pop(context),
             ),
             actions: [
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    listing.isFavorite ? Icons.favorite : Icons.favorite_border,
-                    size: 20,
-                    color: listing.isFavorite ? AppColors.error : AppColors.gray900,
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: GestureDetector(
+                  onTap: _toggleFavorite,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.45),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      listing.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      size: 20,
+                      color: listing.isFavorite ? AppColors.error : Colors.white,
+                    ),
                   ),
                 ),
-                onPressed: _toggleFavorite,
               ),
-              const SizedBox(width: 8),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: _buildImageCarousel(listing),
@@ -173,7 +184,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              '\$${listing.price.toStringAsFixed(2)}',
+                              '৳${listing.price.toStringAsFixed(0)}',
                               style: AppTextStyles.displayMedium.copyWith(
                                 color: AppColors.primary500,
                               ),
@@ -496,7 +507,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Listed price: \$${_listing.price.toStringAsFixed(2)}',
+              'Listed price: ৳${_listing?.price.toStringAsFixed(0) ?? '0'}',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.gray600,
               ),
@@ -509,7 +520,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               decoration: InputDecoration(
                 labelText: 'Your Offer',
                 hintText: 'Enter amount',
-                prefixText: '\$ ',
+                prefixText: '৳ ',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

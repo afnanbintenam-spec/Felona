@@ -66,7 +66,7 @@ class NotificationsRemoteDataSourceImpl implements NotificationsRemoteDataSource
   Future<void> registerFcmToken(String token) async {
     try {
       await _apiClient.post(
-        '$_notificationsPath/fcm-token',
+        '$_notificationsPath/register-token',
         data: {'token': token},
       );
     } on DioException catch (e) {

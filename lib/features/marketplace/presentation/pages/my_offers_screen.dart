@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
@@ -255,7 +255,7 @@ class _MyOffersScreenState extends State<MyOffersScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Your offer: ₦${offer['amount'] ?? offer['price'] ?? '0'}',
+                'Your offer: ৳${offer['amount'] ?? offer['price'] ?? '0'}',
                 style: const TextStyle(
                   fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600,
                   color: AppColors.primaryGreen,

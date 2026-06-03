@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
@@ -148,7 +148,7 @@ class _CollectorEarningsScreenState extends State<CollectorEarningsScreen> {
           )),
           Spacing.gap8,
           Text(
-            '₦${_totalEarnings.toStringAsFixed(0)}',
+            '৳${_totalEarnings.toStringAsFixed(0)}',
             style: const TextStyle(
               fontFamily: 'Inter', fontSize: 36, fontWeight: FontWeight.w800,
               color: Colors.white,
@@ -184,9 +184,9 @@ class _CollectorEarningsScreenState extends State<CollectorEarningsScreen> {
   Widget _buildStatsRow() {
     return Row(
       children: [
-        Expanded(child: _statCard('₦${_thisWeek.toStringAsFixed(0)}', 'This Week', Icons.calendar_today_rounded)),
+        Expanded(child: _statCard('৳${_thisWeek.toStringAsFixed(0)}', 'This Week', Icons.calendar_today_rounded)),
         Spacing.hGap12,
-        Expanded(child: _statCard('₦${_thisMonth.toStringAsFixed(0)}', 'This Month', Icons.date_range_rounded)),
+        Expanded(child: _statCard('৳${_thisMonth.toStringAsFixed(0)}', 'This Month', Icons.date_range_rounded)),
       ],
     );
   }
@@ -285,7 +285,7 @@ class _CollectorEarningsScreenState extends State<CollectorEarningsScreen> {
             ),
           ),
           Text(
-            '+₦${tx['amount'] ?? tx['earnings'] ?? '0'}',
+            '+৳${tx['amount'] ?? tx['earnings'] ?? '0'}',
             style: const TextStyle(
               fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w700,
               color: AppColors.primaryGreen,

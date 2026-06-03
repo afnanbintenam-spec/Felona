@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/features/notifications/presentation/bloc/notifications_event.dart';
 import 'package:felo_na/features/notifications/presentation/bloc/notifications_state.dart';
@@ -20,6 +21,7 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
     on<DeleteNotificationRequested>(_onDeleteNotificationRequested);
     on<RefreshNotificationsRequested>(_onRefreshNotificationsRequested);
     on<NewNotificationReceived>(_onNewNotificationReceived);
+    on<RegisterFcmTokenRequested>(_onRegisterFcmToken);
   }
 
   Future<void> _onLoadNotificationsRequested(
@@ -156,6 +158,19 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
       notifications: updatedNotifications,
       unreadCount: unreadCount,
     ));
+  }
+
+  Future<void> _onRegisterFcmToken(
+    RegisterFcmTokenRequested event,
+    Emitter<NotificationsState> emit,
+  ) async {
+    // Fire-and-forget: register token with backend, don't emit loading state
+    try {
+      await _repository.registerFcmToken(event.token);
+      debugPrint('[NotificationsBloc] FCM token registered');
+    } catch (e) {
+      debugPrint('[NotificationsBloc] FCM token registration failed: $e');
+    }
   }
 
   NotificationType _parseNotificationType(String? type) {

@@ -32,6 +32,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<UpdateProfileRequested>(_onUpdateProfile);
     on<UploadProfilePictureRequested>(_onUploadPicture);
     on<VerificationCompleted>(_onVerificationCompleted);
+    on<DeleteAccountRequested>(_onDeleteAccount);
   }
 
   Future<void> _onAuthCheck(
@@ -269,6 +270,42 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } catch (e) {
       debugPrint('[AuthBloc] Upload error: $e');
       emit(AuthError(message: 'Upload failed: ${e.toString()}'));
+      emit(Authenticated(user: currentUser));
+    }
+  }
+
+  Future<void> _onDeleteAccount(
+      DeleteAccountRequested event, Emitter<AuthState> emit) async {
+    if (state is! Authenticated) return;
+    final currentUser = (state as Authenticated).user;
+    emit(const AuthLoading());
+
+    try {
+      final token = await _storage.read(key: TokenKeys.accessToken);
+      final response = await _dio.delete(
+        '/users/account',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        await _clearTokens();
+        emit(const AccountDeleted());
+        emit(const Unauthenticated());
+      } else {
+        Map<String, dynamic> responseData;
+        if (response.data is String) {
+          responseData = json.decode(response.data as String) as Map<String, dynamic>;
+        } else {
+          responseData = (response.data as Map<String, dynamic>?) ?? {};
+        }
+        emit(AuthError(
+          message: responseData['message']?.toString() ?? 'Account deletion failed',
+        ));
+        emit(Authenticated(user: currentUser));
+      }
+    } catch (e) {
+      debugPrint('[AuthBloc] Delete account error: $e');
+      emit(const AuthError(message: 'Account deletion failed. Please try again.'));
       emit(Authenticated(user: currentUser));
     }
   }

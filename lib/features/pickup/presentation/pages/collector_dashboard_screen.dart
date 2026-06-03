@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
@@ -164,7 +164,7 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
               const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primaryGreen, size: 14),
               const SizedBox(width: 4),
               Text(
-                '₦${_totalEarned.toStringAsFixed(0)}',
+                '৳${_totalEarned.toStringAsFixed(0)}',
                 style: const TextStyle(
                   fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600,
                   color: AppColors.primaryGreen,
@@ -327,7 +327,7 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
           children: [
             Expanded(child: _statCard('$_jobsCompleted', 'Jobs Done', Icons.check_circle_rounded)),
             Spacing.hGap12,
-            Expanded(child: _statCard('₦${_totalEarned.toStringAsFixed(0)}', 'Earned', Icons.payments_rounded)),
+            Expanded(child: _statCard('৳${_totalEarned.toStringAsFixed(0)}', 'Earned', Icons.payments_rounded)),
           ],
         ),
         Spacing.gap12,
@@ -486,7 +486,7 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
             ),
           ),
           Text(
-            '₦${job['earnings'] ?? job['price'] ?? '0'}',
+            '৳${job['earnings'] ?? job['price'] ?? '0'}',
             style: const TextStyle(
               fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600,
               color: AppColors.primaryGreen,

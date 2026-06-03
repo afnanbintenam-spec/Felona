@@ -92,3 +92,8 @@ class VerificationCompleted extends AuthEvent {
   @override
   List<Object?> get props => [token, refreshToken, userJson];
 }
+
+/// Event triggered when the user requests account deletion.
+class DeleteAccountRequested extends AuthEvent {
+  const DeleteAccountRequested();
+}

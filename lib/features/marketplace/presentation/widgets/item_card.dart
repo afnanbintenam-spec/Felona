@@ -1,12 +1,14 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
+import 'package:felo_na/core/constants/enums.dart';
 import 'package:felo_na/features/marketplace/domain/entities/listing.dart';
 
 /// Item card widget for displaying marketplace listings.
 ///
 /// Features:
-/// - Image with gradient overlay
-/// - Title, price, and seller info
+/// - Image with gradient overlay (CachedNetworkImage with category fallbacks)
+/// - Title, price in BDT (৳), and seller info
 /// - Favorite button
 /// - Tap to view details
 class ItemCard extends StatelessWidget {
@@ -21,8 +23,34 @@ class ItemCard extends StatelessWidget {
     this.onFavorite,
   });
 
+  /// Returns a relevant Unsplash placeholder image URL based on listing category.
+  /// These are freely embeddable, attribution-free images from Unsplash.
+  String _placeholderImageUrl(ListingCategory category) {
+    // Curated Unsplash photos per category (w=400 for performance)
+    switch (category) {
+      case ListingCategory.furniture:
+        return 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&fit=crop';
+      case ListingCategory.electronics:
+        return 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&fit=crop';
+      case ListingCategory.books:
+        return 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&fit=crop';
+      case ListingCategory.appliances:
+        return 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&fit=crop';
+      case ListingCategory.office:
+        return 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&fit=crop';
+      case ListingCategory.reusable:
+        return 'https://images.unsplash.com/photo-1542601906897-ecd4d0a2b228?w=400&fit=crop';
+      case ListingCategory.scrap:
+        return 'https://images.unsplash.com/photo-1604187351574-c75ca79f5807?w=400&fit=crop';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final imageUrl = listing.imageUrls.isNotEmpty
+        ? listing.imageUrls.first
+        : _placeholderImageUrl(listing.category);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -40,33 +68,41 @@ class ItemCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image with favorite button
+            // Image with favorite button and price overlay
             Stack(
               children: [
-                // Image
-                Container(
-                  height: 160,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    color: AppColors.gray200,
-                    image: listing.imageUrls.isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(listing.imageUrls.first),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
+                // Image — CachedNetworkImage for performance & offline caching
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
                   ),
-                  child: listing.imageUrls.isEmpty
-                      ? Center(
-                          child: Icon(
-                            Icons.image_outlined,
-                            size: 48,
-                            color: AppColors.gray400,
-                          ),
-                        )
-                      : null,
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    height: 160,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      height: 160,
+                      color: AppColors.gray200,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary500,
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      height: 160,
+                      color: AppColors.gray200,
+                      child: Center(
+                        child: Icon(
+                          Icons.image_outlined,
+                          size: 48,
+                          color: AppColors.gray400,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 // Gradient overlay
                 Container(
@@ -116,7 +152,7 @@ class ItemCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                // Price tag
+                // Price tag — in Bangladeshi Taka (৳)
                 Positioned(
                   bottom: 8,
                   left: 8,
@@ -130,7 +166,7 @@ class ItemCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '\$${listing.price.toStringAsFixed(2)}',
+                      '৳${listing.price.toStringAsFixed(0)}',
                       style: const TextStyle(
                         color: AppColors.white,
                         fontSize: 14,
