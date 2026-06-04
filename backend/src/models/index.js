@@ -7,6 +7,8 @@ const EcoActivity = require('./EcoActivity');
 const Otp = require('./Otp');
 const WasteScan = require('./WasteScan');
 const Notification = require('./Notification');
+const Conversation = require('./Conversation');
+const Message = require('./Message');
 
 // ─── Associations ─────────────────────────────────────────────
 
@@ -42,6 +44,27 @@ WasteScan.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications' });
 Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
+// ─── Conversation Associations ────────────────────────────────
+
+// Conversation belongs to a Listing
+Listing.hasMany(Conversation, { foreignKey: 'listing_id', as: 'conversations' });
+Conversation.belongsTo(Listing, { foreignKey: 'listing_id', as: 'listing' });
+
+// Conversation buyer/seller
+User.hasMany(Conversation, { foreignKey: 'buyer_id', as: 'bought_conversations' });
+Conversation.belongsTo(User, { foreignKey: 'buyer_id', as: 'buyer' });
+
+User.hasMany(Conversation, { foreignKey: 'seller_id', as: 'sold_conversations' });
+Conversation.belongsTo(User, { foreignKey: 'seller_id', as: 'seller' });
+
+// Message belongs to Conversation
+Conversation.hasMany(Message, { foreignKey: 'conversation_id', as: 'messages' });
+Message.belongsTo(Conversation, { foreignKey: 'conversation_id', as: 'conversation' });
+
+// Message has a sender
+User.hasMany(Message, { foreignKey: 'sender_id', as: 'sent_messages' });
+Message.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
+
 module.exports = {
   sequelize,
   User,
@@ -52,4 +75,6 @@ module.exports = {
   Otp,
   WasteScan,
   Notification,
+  Conversation,
+  Message,
 };

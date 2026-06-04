@@ -26,6 +26,7 @@ const ecoRoutes = require('./routes/eco');
 const aiRoutes = require('./routes/ai');
 const notificationsRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
+const conversationsRoutes = require('./routes/conversations');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -92,6 +93,7 @@ app.use('/eco', rateLimiter(RATE_LIMIT_MAX_REQUESTS), ecoRoutes);
 app.use('/ai', rateLimiter(AUTH_RATE_LIMIT_MAX), aiRoutes);
 app.use('/notifications', rateLimiter(RATE_LIMIT_MAX_REQUESTS), notificationsRoutes);
 app.use('/admin', rateLimiter(RATE_LIMIT_MAX_REQUESTS), adminRoutes);
+app.use('/conversations', rateLimiter(RATE_LIMIT_MAX_REQUESTS), conversationsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
