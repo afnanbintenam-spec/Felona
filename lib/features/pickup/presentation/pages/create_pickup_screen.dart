@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/app_text_styles.dart';
 import 'package:felo_na/core/constants/enums.dart';
@@ -104,22 +104,49 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
         ),
       );
 
-      // Reverse geocode to get a human-readable address
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-
-      String address = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
-      if (placemarks.isNotEmpty) {
-        final p = placemarks.first;
-        final parts = [
-          p.street,
-          p.subLocality,
-          p.locality,
-          p.administrativeArea,
-        ].where((s) => s != null && s.isNotEmpty).toList();
-        if (parts.isNotEmpty) address = parts.join(', ');
+      // Reverse geocode using OpenStreetMap Nominatim (free, no API key needed)
+      String address =
+          '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+      try {
+        final dio = Dio();
+        final response = await dio.get(
+          'https://nominatim.openstreetmap.org/reverse',
+          queryParameters: {
+            'lat': position.latitude,
+            'lon': position.longitude,
+            'format': 'json',
+            'addressdetails': 1,
+          },
+          options: Options(
+            headers: {'User-Agent': 'FeloNa/1.0 (felona.app)'},
+            receiveTimeout: const Duration(seconds: 8),
+          ),
+        );
+        final data = response.data as Map<String, dynamic>?;
+        if (data != null) {
+          // Use display_name for full address, or build from parts
+          final addr = data['address'] as Map<String, dynamic>?;
+          if (addr != null) {
+            final parts = <String>[
+              if (addr['road'] != null) addr['road'] as String,
+              if (addr['suburb'] != null) addr['suburb'] as String
+              else if (addr['neighbourhood'] != null) addr['neighbourhood'] as String,
+              if (addr['city'] != null) addr['city'] as String
+              else if (addr['town'] != null) addr['town'] as String
+              else if (addr['village'] != null) addr['village'] as String,
+              if (addr['state'] != null) addr['state'] as String,
+            ];
+            if (parts.isNotEmpty) address = parts.join(', ');
+          } else if (data['display_name'] != null) {
+            address = (data['display_name'] as String)
+                .split(',')
+                .take(4)
+                .join(',')
+                .trim();
+          }
+        }
+      } catch (_) {
+        // Nominatim failed — keep coordinates as fallback
       }
 
       if (mounted) {
@@ -197,12 +224,12 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
         listener: (context, state) {
           if (state is PickupCreated) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              const SnackBar(
                 content: Text(
-                  'Pickup request created! You\'ll earn ${(state.pickup.estimatedWeight * 10).toInt()} eco points when completed.',
+                  'Pickup request created! You\'ll earn eco points when the pickup is completed.',
                 ),
                 backgroundColor: AppColors.success,
-                duration: const Duration(seconds: 4),
+                duration: Duration(seconds: 4),
               ),
             );
             Navigator.pop(context);

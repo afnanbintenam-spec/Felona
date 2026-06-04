@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:felo_na/core/constants/enums.dart';
 import 'package:felo_na/core/errors/exceptions.dart';
 import 'package:felo_na/core/network/api_client.dart';
 import 'package:felo_na/features/marketplace/data/models/listing_model.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Remote data source for marketplace operations.
 abstract class MarketplaceRemoteDataSource {
@@ -16,7 +15,7 @@ abstract class MarketplaceRemoteDataSource {
     required String description,
     required double price,
     required ListingCategory category,
-    required List<String> imagePaths,
+    required List<XFile> images,
     String? location,
   });
   Future<List<ListingModel>> getMyListings();
@@ -97,26 +96,24 @@ class MarketplaceRemoteDataSourceImpl implements MarketplaceRemoteDataSource {
     required String description,
     required double price,
     required ListingCategory category,
-    required List<String> imagePaths,
+    required List<XFile> images,
     String? location,
   }) async {
     try {
-      // Upload images first
+      // Upload images first, using bytes so it works cross-platform (Android, iOS, web)
       final imageUrls = <String>[];
-      for (final path in imagePaths) {
-        final file = File(path);
-        if (await file.exists()) {
-          final fileName = path.split(Platform.pathSeparator).last;
-          final formData = FormData.fromMap({
-            'image': await MultipartFile.fromFile(path, filename: fileName),
-          });
-          final uploadResponse = await _apiClient.uploadMultipart(
-            '/uploads/listing-image',
-            formData,
-          );
-          final url = uploadResponse.data['url'] as String?;
-          if (url != null) imageUrls.add(url);
-        }
+      for (final image in images) {
+        final bytes = await image.readAsBytes();
+        final fileName = image.name.isNotEmpty ? image.name : 'image.jpg';
+        final formData = FormData.fromMap({
+          'image': MultipartFile.fromBytes(bytes, filename: fileName),
+        });
+        final uploadResponse = await _apiClient.uploadMultipart(
+          '/uploads/listing-image',
+          formData,
+        );
+        final url = uploadResponse.data['url'] as String?;
+        if (url != null) imageUrls.add(url);
       }
 
       // Create listing with uploaded image URLs
@@ -127,8 +124,8 @@ class MarketplaceRemoteDataSourceImpl implements MarketplaceRemoteDataSource {
           'description': description,
           'price': price,
           'category': category.name,
-          'image_urls': imageUrls.isNotEmpty ? imageUrls : imagePaths,
-          'location': location,
+          'image_urls': imageUrls,
+          if (location != null) 'location': location,
         },
       );
 

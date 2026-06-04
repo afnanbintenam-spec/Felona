@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/app_text_styles.dart';
+import 'package:felo_na/core/constants/eco_levels.dart';
 import 'package:felo_na/core/widgets/loading/loading_indicator.dart';
 import 'package:felo_na/core/widgets/empty_states/empty_state.dart';
 import 'package:felo_na/features/eco_score/presentation/bloc/eco_bloc.dart';
@@ -179,7 +180,8 @@ class _EcoScoreScreenState extends State<EcoScoreScreen>
                 height: 120,
                 child: CustomPaint(
                   painter: _EcoRingPainter(
-                    progress: stats.totalPoints / 2000,
+                    progress: EcoLevels.fromPoints(stats.totalPoints)
+                        .progressFor(stats.totalPoints),
                     glowIntensity: _glowController.value,
                   ),
                   child: Center(

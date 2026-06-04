@@ -297,7 +297,7 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
           ),
           Spacing.gap4,
           Text(
-            'Weight: ${_activeJob?['weight'] ?? '—'} kg • ${_activeJob?['waste_type'] ?? 'Mixed'}',
+            'Weight: ${_activeJob?['weight'] ?? '—'} kg • ${_activeJob?['waste_type'] ?? 'Other'}',
             style: const TextStyle(
               fontFamily: 'Inter', fontSize: 12, color: AppColors.textTertiary,
             ),

@@ -19,20 +19,21 @@ class EcoStatsModel extends EcoStats {
 
   factory EcoStatsModel.fromJson(Map<String, dynamic> json) {
     return EcoStatsModel(
-      userId: (json['user_id'] ?? json['userId']) as String,
+      userId: (json['user_id'] ?? json['userId'])?.toString() ?? '',
       totalPoints: (json['total_points'] ?? json['totalPoints'] ?? 0) as int,
       totalWeightRecycled:
           ((json['total_weight_recycled'] ?? json['totalWeightRecycled'] ?? 0) as num).toDouble(),
       itemsSold: (json['items_sold'] ?? json['itemsSold'] ?? 0) as int,
       pickupsCompleted: (json['pickups_completed'] ?? json['pickupsCompleted'] ?? 0) as int,
       co2Reduced: ((json['co2_reduced'] ?? json['co2Reduced'] ?? 0) as num).toDouble(),
-      currentBadge: _parseBadge(json['current_badge'] ?? json['currentBadge'] ?? 'beginner'),
+      currentBadge: _parseBadge(
+          (json['current_badge'] ?? json['currentBadge'])?.toString() ?? 'beginner'),
       currentStreak: (json['current_streak'] ?? json['currentStreak'] ?? 0) as int,
       longestStreak: (json['longest_streak'] ?? json['longestStreak'] ?? 0) as int,
-      lastActivityDate: DateTime.parse(
-        (json['last_activity_date'] ?? json['lastActivityDate'] ?? DateTime.now().toIso8601String())
-            as String,
-      ),
+      lastActivityDate: DateTime.tryParse(
+            (json['last_activity_date'] ?? json['lastActivityDate'])?.toString() ?? '',
+          ) ??
+          DateTime.now(),
       milestones: (json['milestones'] as List<dynamic>?)
               ?.map((m) => EcoMilestoneModel.fromJson(m as Map<String, dynamic>))
               .toList() ??
@@ -95,13 +96,13 @@ class EcoMilestoneModel extends EcoMilestone {
 
   factory EcoMilestoneModel.fromJson(Map<String, dynamic> json) {
     return EcoMilestoneModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
       requiredPoints: (json['required_points'] ?? json['requiredPoints'] ?? 0) as int,
       isAchieved: (json['is_achieved'] ?? json['isAchieved'] ?? false) as bool,
       achievedAt: (json['achieved_at'] ?? json['achievedAt']) != null
-          ? DateTime.parse((json['achieved_at'] ?? json['achievedAt']) as String)
+          ? DateTime.tryParse((json['achieved_at'] ?? json['achievedAt']).toString())
           : null,
     );
   }
@@ -118,13 +119,14 @@ class PointHistoryModel extends PointHistory {
 
   factory PointHistoryModel.fromJson(Map<String, dynamic> json) {
     return PointHistoryModel(
-      id: json['id'] as String,
-      points: json['points'] as int,
-      reason: json['reason'] as String,
-      date: DateTime.parse(
-        (json['date'] ?? json['created_at'] ?? DateTime.now().toIso8601String()) as String,
-      ),
-      relatedId: (json['related_id'] ?? json['relatedId']) as String?,
+      id: json['id']?.toString() ?? '',
+      points: (json['points'] ?? 0) as int,
+      reason: json['reason']?.toString() ?? '',
+      date: DateTime.tryParse(
+            (json['date'] ?? json['created_at'])?.toString() ?? '',
+          ) ??
+          DateTime.now(),
+      relatedId: (json['related_id'] ?? json['relatedId'])?.toString(),
     );
   }
 

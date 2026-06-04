@@ -5,6 +5,7 @@ import 'package:felo_na/core/errors/failures.dart';
 import 'package:felo_na/features/auth/domain/usecases/usecase.dart';
 import 'package:felo_na/features/marketplace/domain/entities/listing.dart';
 import 'package:felo_na/features/marketplace/domain/repositories/marketplace_repository.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Creates a new marketplace listing for the authenticated seller.
 class CreateListingUseCase extends UseCase<Listing, CreateListingParams> {
@@ -19,7 +20,7 @@ class CreateListingUseCase extends UseCase<Listing, CreateListingParams> {
         description: params.description,
         price: params.price,
         category: params.category,
-        imagePaths: params.imagePaths,
+        images: params.images,
         location: params.location,
       );
 }
@@ -29,7 +30,7 @@ class CreateListingParams extends Equatable {
   final String description;
   final double price;
   final ListingCategory category;
-  final List<String> imagePaths;
+  final List<XFile> images;
   final String? location;
 
   const CreateListingParams({
@@ -37,10 +38,10 @@ class CreateListingParams extends Equatable {
     required this.description,
     required this.price,
     required this.category,
-    required this.imagePaths,
+    required this.images,
     this.location,
   });
 
   @override
-  List<Object?> get props => [title, description, price, category, imagePaths, location];
+  List<Object?> get props => [title, description, price, category, images, location];
 }

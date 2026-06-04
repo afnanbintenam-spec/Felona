@@ -1,7 +1,5 @@
-import 'dart:io' show Platform;
-
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../errors/exceptions.dart';
 import 'auth_interceptor.dart';
@@ -31,7 +29,7 @@ class ApiClient {
 
     // Development fallbacks only
     if (kIsWeb) return 'http://localhost:3000';
-    if (Platform.isAndroid) return 'http://10.0.2.2:3000';
+    if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:3000';
     return 'http://localhost:3000';
   }
 

@@ -130,7 +130,7 @@ void main() {
           description: 'Works great',
           price: 4500,
           category: ListingCategory.electronics,
-          imagePaths: const [],
+          images: const [],
           location: null,
         )).thenAnswer((_) async => Right(tListing));
         return bloc;
@@ -140,7 +140,7 @@ void main() {
         description: 'Works great',
         price: 4500,
         category: ListingCategory.electronics,
-        imagePaths: [],
+        images: [],
       )),
       expect: () => [
         const CreatingListing(),
@@ -156,7 +156,7 @@ void main() {
           description: anyNamed('description'),
           price: anyNamed('price'),
           category: anyNamed('category'),
-          imagePaths: anyNamed('imagePaths'),
+          images: anyNamed('images'),
           location: anyNamed('location'),
         )).thenAnswer(
           (_) async =>
@@ -169,7 +169,7 @@ void main() {
         description: '',
         price: 0,
         category: ListingCategory.scrap,
-        imagePaths: [],
+        images: [],
       )),
       expect: () => [
         const CreatingListing(),

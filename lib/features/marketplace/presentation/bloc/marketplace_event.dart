@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:felo_na/core/constants/enums.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Base class for all marketplace events.
 abstract class MarketplaceEvent extends Equatable {
@@ -50,18 +51,18 @@ class CreateListingRequested extends MarketplaceEvent {
   final String description;
   final double price;
   final ListingCategory category;
-  final List<String> imagePaths;
+  final List<XFile> images;
 
   const CreateListingRequested({
     required this.title,
     required this.description,
     required this.price,
     required this.category,
-    required this.imagePaths,
+    required this.images,
   });
 
   @override
-  List<Object?> get props => [title, description, price, category, imagePaths];
+  List<Object?> get props => [title, description, price, category, images];
 }
 
 /// Event to load user's own listings.

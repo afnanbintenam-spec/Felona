@@ -7,6 +7,15 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+import java.util.Properties
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY") ?: ""
+
 android {
     namespace = "com.felona.app"
     compileSdk = flutter.compileSdkVersion
@@ -23,12 +32,11 @@ android {
 
     defaultConfig {
         applicationId = "com.felona.app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion // Required for Firebase
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {

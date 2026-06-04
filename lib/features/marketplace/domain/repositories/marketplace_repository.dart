@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:felo_na/core/constants/enums.dart';
 import 'package:felo_na/core/errors/failures.dart';
 import 'package:felo_na/features/marketplace/domain/entities/listing.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Repository interface for marketplace operations.
 abstract class MarketplaceRepository {
@@ -13,7 +14,7 @@ abstract class MarketplaceRepository {
     required String description,
     required double price,
     required ListingCategory category,
-    required List<String> imagePaths,
+    required List<XFile> images,
     String? location,
   });
   Future<Either<Failure, List<Listing>>> getMyListings();

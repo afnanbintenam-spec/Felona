@@ -236,17 +236,21 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
           children: [
             Expanded(
               child: _statCard(
-                  '$listingCount', 'Listings', Icons.sell_rounded),
+                  listingCount == 0 ? 'None yet' : '$listingCount',
+                  'Listings',
+                  Icons.sell_rounded),
             ),
             Spacing.hGap12,
             Expanded(
               child: _statCard(
-                  '$activeCount', 'Active', Icons.check_circle_outline),
+                  activeCount == 0 ? 'None yet' : '$activeCount',
+                  'Active',
+                  Icons.check_circle_outline),
             ),
             Spacing.hGap12,
             Expanded(
               child: _statCard(
-                  '—', 'Rating', Icons.star_rounded,
+                  'No rating yet', 'Rating', Icons.star_rounded,
                   iconColor: const Color(0xFFF39C12)),
             ),
           ],
@@ -268,13 +272,17 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
         children: [
           Icon(icon, color: iconColor, size: 20),
           Spacing.gap6,
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
           Spacing.gap2,

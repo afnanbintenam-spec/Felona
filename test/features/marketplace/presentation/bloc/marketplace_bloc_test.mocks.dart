@@ -12,6 +12,7 @@ import 'package:felo_na/features/marketplace/domain/entities/listing.dart'
     as _i6;
 import 'package:felo_na/features/marketplace/domain/repositories/marketplace_repository.dart'
     as _i3;
+import 'package:image_picker/image_picker.dart' as _i8;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -101,7 +102,7 @@ class MockMarketplaceRepository extends _i1.Mock
     required String? description,
     required double? price,
     required _i7.ListingCategory? category,
-    required List<String>? imagePaths,
+    required List<_i8.XFile>? images,
     String? location,
   }) =>
       (super.noSuchMethod(
@@ -110,7 +111,7 @@ class MockMarketplaceRepository extends _i1.Mock
               #description: description,
               #price: price,
               #category: category,
-              #imagePaths: imagePaths,
+              #images: images,
               #location: location,
             }),
             returnValue: _i4.Future<_i2.Either<_i5.Failure, _i6.Listing>>.value(
@@ -121,7 +122,7 @@ class MockMarketplaceRepository extends _i1.Mock
                   #description: description,
                   #price: price,
                   #category: category,
-                  #imagePaths: imagePaths,
+                  #images: images,
                   #location: location,
                 }),
               ),

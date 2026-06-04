@@ -5,6 +5,7 @@ import 'package:felo_na/core/errors/failures.dart';
 import 'package:felo_na/features/marketplace/data/datasources/marketplace_remote_data_source.dart';
 import 'package:felo_na/features/marketplace/domain/entities/listing.dart';
 import 'package:felo_na/features/marketplace/domain/repositories/marketplace_repository.dart';
+import 'package:image_picker/image_picker.dart';
 
 class MarketplaceRepositoryImpl implements MarketplaceRepository {
   final MarketplaceRemoteDataSource _remoteDataSource;
@@ -48,7 +49,7 @@ class MarketplaceRepositoryImpl implements MarketplaceRepository {
     required String description,
     required double price,
     required ListingCategory category,
-    required List<String> imagePaths,
+    required List<XFile> images,
     String? location,
   }) async {
     try {
@@ -57,7 +58,7 @@ class MarketplaceRepositoryImpl implements MarketplaceRepository {
         description: description,
         price: price,
         category: category,
-        imagePaths: imagePaths,
+        images: images,
         location: location,
       );
       return Right(listing);

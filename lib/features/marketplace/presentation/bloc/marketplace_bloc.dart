@@ -106,7 +106,7 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
       description: event.description,
       price: event.price,
       category: event.category,
-      imagePaths: event.imagePaths,
+      images: event.images,
     );
 
     result.fold(
