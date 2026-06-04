@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
@@ -151,35 +150,26 @@ class _PickupTrackingScreenState extends State<PickupTrackingScreen> {
     final hasPickupLocation =
         _pickup!.latitude != null && _pickup!.longitude != null;
 
-    // Default center: collector pos > pickup pos > Dhaka
-    final centerLat = _pickup!.collectorLatitude ??
-        _pickup!.latitude ??
-        23.8103;
-    final centerLng = _pickup!.collectorLongitude ??
-        _pickup!.longitude ??
-        90.4125;
-
-    final Set<Marker> markers = {};
-    if (hasCollectorLocation) {
-      markers.add(Marker(
-        markerId: const MarkerId('collector'),
-        position:
-            LatLng(_pickup!.collectorLatitude!, _pickup!.collectorLongitude!),
-        infoWindow: InfoWindow(
-            title: _pickup!.collectorName ?? 'Collector'),
-        icon:
-            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      ));
-    }
-    if (hasPickupLocation) {
-      markers.add(Marker(
-        markerId: const MarkerId('pickup'),
-        position: LatLng(_pickup!.latitude!, _pickup!.longitude!),
-        infoWindow: const InfoWindow(title: 'Pickup Location'),
-        icon:
-            BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-      ));
-    }
+    final statusBadge = Positioned(
+      top: 12,
+      right: 12,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: _getStatusColor(_pickup!.status),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          _pickup!.status.displayName,
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -187,39 +177,47 @@ class _PickupTrackingScreenState extends State<PickupTrackingScreen> {
         height: 220,
         child: Stack(
           children: [
-            GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: LatLng(centerLat, centerLng),
-                zoom: 14,
+            Container(
+              width: double.infinity,
+              height: 220,
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                border: Border.all(color: AppColors.border),
               ),
-              markers: markers,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              mapToolbarEnabled: false,
-              liteModeEnabled: false,
-            ),
-            // Status badge overlay
-            Positioned(
-              top: 12,
-              right: 12,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(_pickup!.status),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _pickup!.status.displayName,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.map_rounded,
+                      size: 48,
+                      color: AppColors.primaryGreen.withValues(alpha: 0.5)),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Map view',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
+                  if (hasCollectorLocation || hasPickupLocation)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        hasCollectorLocation
+                            ? 'Collector: ${_pickup!.collectorLatitude!.toStringAsFixed(4)}, ${_pickup!.collectorLongitude!.toStringAsFixed(4)}'
+                            : 'Pickup: ${_pickup!.latitude!.toStringAsFixed(4)}, ${_pickup!.longitude!.toStringAsFixed(4)}',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
+            statusBadge,
           ],
         ),
       ),
