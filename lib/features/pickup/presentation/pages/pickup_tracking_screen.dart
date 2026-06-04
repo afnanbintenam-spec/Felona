@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/enums.dart';
 import 'package:felo_na/features/pickup/domain/entities/pickup_request.dart';
@@ -552,17 +553,27 @@ class _PickupTrackingScreenState extends State<PickupTrackingScreen> {
               ),
               // Call button
               if (_pickup!.collectorPhone != null)
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGreen.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.phone_rounded,
-                    color: AppColors.primaryGreen,
-                    size: 20,
+                GestureDetector(
+                  onTap: () async {
+                    final phone = _pickup!.collectorPhone!
+                        .replaceAll(RegExp(r'\s+'), '');
+                    final uri = Uri(scheme: 'tel', path: phone);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri);
+                    }
+                  },
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.phone_rounded,
+                      color: AppColors.primaryGreen,
+                      size: 20,
+                    ),
                   ),
                 ),
             ],

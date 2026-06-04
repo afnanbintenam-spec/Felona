@@ -5,6 +5,80 @@ import 'package:felo_na/core/constants/app_text_styles.dart';
 class SortingGuideScreen extends StatelessWidget {
   const SortingGuideScreen({super.key});
 
+  void _showCategoryDetail(BuildContext context, String icon, String label) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.gray300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Text(icon, style: const TextStyle(fontSize: 32)),
+                const SizedBox(width: 12),
+                Text(label, style: AppTextStyles.headlineMedium.copyWith(
+                  color: AppColors.gray900,
+                )),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _getCategoryDescription(label),
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: AppColors.gray700,
+                height: 1.6,
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getCategoryDescription(String category) {
+    switch (category.toLowerCase()) {
+      case 'glass':
+        return 'Rinse glass bottles and jars before recycling. Remove lids and caps. Do not recycle broken glass, mirrors, or window panes in the recycling bin.';
+      case 'food waste':
+        return 'Compost food scraps like fruit peels, vegetable trimmings, and coffee grounds. Keep it separate from regular recyclables to avoid contamination.';
+      case 'batteries':
+        return 'Never throw batteries in regular trash. Take them to designated collection points. They contain hazardous materials that can leach into soil and water.';
+      case 'paper-cardboard':
+        return 'Flatten cardboard boxes to save space. Keep paper dry — wet or greasy paper (like pizza boxes) cannot be recycled. Remove any plastic tape or staples if possible.';
+      case 'electronics':
+        return 'E-waste must be handled by certified recyclers. Never burn electronics. Donate working devices. Many manufacturers offer take-back programs.';
+      case 'green waste':
+        return 'Garden clippings, leaves, and branches go in green waste bins. Avoid mixing with food waste. This material is composted into soil amendment.';
+      case 'medication':
+        return 'Return unused medication to pharmacies for proper disposal. Never flush medicines down the toilet — they contaminate water supplies.';
+      case 'hazardous waste':
+        return 'Paints, solvents, pesticides, and cleaning chemicals need special handling. Take them to hazardous waste collection centers, never to regular bins.';
+      case 'bulky waste':
+        return 'Large items like furniture and appliances require scheduled collection. Contact your local waste management service for bulk pickup arrangements.';
+      default:
+        return 'Please refer to your local waste management guidelines for proper disposal of this material.';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,12 +97,12 @@ class SortingGuideScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Popular Section
-                    _buildPopularSection(),
+                    _buildPopularSection(context),
                     
                     const SizedBox(height: 24),
                     
                     // Other Section
-                    _buildOtherSection(),
+                    _buildOtherSection(context),
                   ],
                 ),
               ),
@@ -87,7 +161,7 @@ class SortingGuideScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPopularSection() {
+  Widget _buildPopularSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -134,31 +208,37 @@ class SortingGuideScreen extends StatelessWidget {
           
           // Category List
           _buildCategoryItem(
+            context: context,
             icon: '🍶',
             label: 'Glass',
             color: const Color(0xFFB8D4C8),
           ),
           _buildCategoryItem(
+            context: context,
             icon: '🍎',
             label: 'Food waste',
             color: const Color(0xFFD4E5B8),
           ),
           _buildCategoryItem(
+            context: context,
             icon: '🔋',
             label: 'Batteries',
             color: const Color(0xFFE5D4B8),
           ),
           _buildCategoryItem(
+            context: context,
             icon: '📦',
             label: 'Paper-cardboard',
             color: const Color(0xFFD4A574),
           ),
           _buildCategoryItem(
+            context: context,
             icon: '📱',
             label: 'Electronics',
             color: const Color(0xFFB8B8D4),
           ),
           _buildCategoryItem(
+            context: context,
             icon: '🌿',
             label: 'Green Waste',
             color: const Color(0xFFB8E5D4),
@@ -169,7 +249,7 @@ class SortingGuideScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOtherSection() {
+  Widget _buildOtherSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -217,16 +297,19 @@ class SortingGuideScreen extends StatelessWidget {
           
           // Category List
           _buildCategoryItem(
+            context: context,
             icon: '💊',
             label: 'Medication',
             color: const Color(0xFFFFD4D4),
           ),
           _buildCategoryItem(
+            context: context,
             icon: '🧴',
             label: 'Hazardous waste',
             color: const Color(0xFFFFE5B8),
           ),
           _buildCategoryItem(
+            context: context,
             icon: '🪑',
             label: 'Bulky waste',
             color: const Color(0xFFD4D4E5),
@@ -238,6 +321,7 @@ class SortingGuideScreen extends StatelessWidget {
   }
 
   Widget _buildCategoryItem({
+    required BuildContext context,
     required String icon,
     required String label,
     required Color color,
@@ -247,7 +331,7 @@ class SortingGuideScreen extends StatelessWidget {
       children: [
         InkWell(
           onTap: () {
-            // Navigate to category detail
+            _showCategoryDetail(context, icon, label);
           },
           borderRadius: BorderRadius.circular(12),
           child: Padding(

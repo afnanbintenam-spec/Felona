@@ -26,6 +26,7 @@ abstract class MarketplaceRemoteDataSource {
   Future<List<dynamic>> getReceivedOffers();
   Future<Map<String, dynamic>> acceptOffer(String offerId);
   Future<Map<String, dynamic>> rejectOffer(String offerId);
+  Future<List<ListingModel>> getSellerListings(String sellerId);
 }
 
 class MarketplaceRemoteDataSourceImpl implements MarketplaceRemoteDataSource {
@@ -207,6 +208,22 @@ class MarketplaceRemoteDataSourceImpl implements MarketplaceRemoteDataSource {
       final response =
           await _apiClient.patch('/offers/$offerId/reject');
       return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<List<ListingModel>> getSellerListings(String sellerId) async {
+    try {
+      final response = await _apiClient.get(
+        _listingsPath,
+        queryParameters: {'seller_id': sellerId},
+      );
+      final listings = (response.data['listings'] as List<dynamic>)
+          .map((json) => ListingModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+      return listings;
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

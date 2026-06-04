@@ -1,9 +1,12 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
 import 'package:felo_na/core/network/api_client.dart';
+import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 
 /// Buyer Dashboard — Role-specific home screen for buyers
 class BuyerDashboardScreen extends StatefulWidget {
@@ -121,8 +124,13 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
     );
   }
 
-  // ─── HEADER ───────────────────────────────────────────────────
   Widget _buildHeader() {
+    final authState = context.read<AuthBloc>().state;
+    final userName = authState is Authenticated
+        ? authState.user.fullName
+        : 'Buyer';
+    final avatarLetter = userName.isNotEmpty ? userName[0].toUpperCase() : 'B';
+
     return Row(
       children: [
         Container(
@@ -133,21 +141,29 @@ class _BuyerDashboardScreenState extends State<BuyerDashboardScreen> {
             color: AppColors.card,
             border: Border.all(color: AppColors.primaryGreen, width: 2),
           ),
-          child: const Center(
-            child: Icon(Icons.person_rounded, color: AppColors.primaryGreen, size: 24),
+          child: Center(
+            child: Text(
+              avatarLetter,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryGreen,
+              ),
+            ),
           ),
         ),
         Spacing.hGap12,
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Buyer', style: TextStyle(
+              const Text('Buyer', style: TextStyle(
                 fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500,
                 color: AppColors.primaryGreen,
               )),
               SizedBox(height: 2),
-              Text('Hello, Buyer 👋', style: TextStyle(
+              Text('Hello, $userName 👋', style: const TextStyle(
                 fontFamily: 'Finlandica', fontSize: 22, fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               )),

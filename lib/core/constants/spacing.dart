@@ -12,7 +12,9 @@ class Spacing {
   static const double xxxl = 40;
   static const double huge = 48;
 
+  static const gap2 = SizedBox(height: 2);
   static const gap4 = SizedBox(height: 4);
+  static const gap6 = SizedBox(height: 6);
   static const gap8 = SizedBox(height: 8);
   static const gap12 = SizedBox(height: 12);
   static const gap16 = SizedBox(height: 16);

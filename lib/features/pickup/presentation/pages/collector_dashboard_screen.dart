@@ -1,9 +1,12 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/spacing.dart';
 import 'package:felo_na/core/network/api_client.dart';
+import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 
 /// Collector Dashboard — Role-specific home screen for collectors
 class CollectorDashboardScreen extends StatefulWidget {
@@ -119,6 +122,11 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
 
   // ─── HEADER ───────────────────────────────────────────────────
   Widget _buildHeader() {
+    final authState = context.read<AuthBloc>().state;
+    final userName = authState is Authenticated
+        ? authState.user.fullName
+        : 'Collector';
+
     return Row(
       children: [
         Container(
@@ -134,16 +142,16 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
           ),
         ),
         Spacing.hGap12,
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Collector', style: TextStyle(
+              const Text('Collector', style: TextStyle(
                 fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500,
                 color: AppColors.primaryGreen,
               )),
-              SizedBox(height: 2),
-              Text('Hello, Collector 👋', style: TextStyle(
+              const SizedBox(height: 2),
+              Text('Hello, $userName 👋', style: const TextStyle(
                 fontFamily: 'Finlandica', fontSize: 22, fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               )),
@@ -181,7 +189,7 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
   Widget _buildAvailablePickupsCard() {
     return GestureDetector(
       onTap: () {
-        // Navigate to jobs list
+        Navigator.pushNamed(context, '/collector-jobs');
       },
       child: Container(
         width: double.infinity,
@@ -297,7 +305,14 @@ class _CollectorDashboardScreenState extends State<CollectorDashboardScreen> {
           Spacing.gap12,
           GestureDetector(
             onTap: () {
-              // Navigate to active job details
+              final pickupId = _activeJob?['id']?.toString() ?? '';
+              if (pickupId.isNotEmpty) {
+                Navigator.pushNamed(
+                  context,
+                  '/pickup-tracking',
+                  arguments: {'pickupId': pickupId},
+                );
+              }
             },
             child: Container(
               width: double.infinity,

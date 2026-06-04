@@ -1,14 +1,25 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/eco_levels.dart';
+import 'package:felo_na/core/constants/enums.dart';
 import 'package:felo_na/core/constants/spacing.dart';
 import 'package:felo_na/features/auth/domain/entities/user.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
+import 'package:felo_na/features/eco_score/presentation/bloc/eco_bloc.dart';
+import 'package:felo_na/features/eco_score/presentation/bloc/eco_event.dart';
+import 'package:felo_na/features/eco_score/presentation/bloc/eco_state.dart';
+import 'package:felo_na/features/eco_score/domain/entities/eco_stats.dart';
+import 'package:felo_na/features/pickup/presentation/bloc/pickup_bloc.dart';
+import 'package:felo_na/features/pickup/presentation/bloc/pickup_event.dart';
+import 'package:felo_na/features/pickup/presentation/bloc/pickup_state.dart';
+import 'package:felo_na/features/pickup/domain/entities/pickup_request.dart';
 
-/// Dashboard — Klima-inspired clean design with nature header.
+/// Dashboard — Normal user home screen.
+/// Stats and upcoming pickup are driven by real BLoC data.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -27,6 +38,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..forward();
+
+    // Load real data on mount
+    context.read<EcoBloc>().add(const LoadEcoStatsRequested());
+    context.read<PickupBloc>().add(const LoadPickupsRequested());
   }
 
   @override
@@ -39,7 +54,6 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
-        // Extract user from auth state; fall back to defaults if not yet loaded
         final User? user =
             authState is Authenticated ? authState.user : null;
         final int userPoints = user?.ecoPoints ?? 0;
@@ -47,34 +61,41 @@ class _DashboardScreenState extends State<DashboardScreen>
 
         return Scaffold(
           backgroundColor: AppColors.background,
-          body: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeroHeader(context, userPoints, userName),
-                Padding(
-                  padding: Spacing.pagePadding,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Spacing.gap24,
-                      _buildEcoScoreCard(userPoints),
-                      Spacing.gap20,
-                      _buildAIScanButton(context),
-                      Spacing.gap20,
-                      _buildStatsRow(),
-                      Spacing.gap20,
-                      _buildUpcomingPickup(context),
-                      Spacing.gap24,
-                      _buildQuickActions(context),
-                      Spacing.gap24,
-                      _buildRecentActivity(),
-                      const SizedBox(height: 100),
-                    ],
+          body: RefreshIndicator(
+            color: AppColors.primaryGreen,
+            onRefresh: () async {
+              context.read<EcoBloc>().add(const LoadEcoStatsRequested());
+              context.read<PickupBloc>().add(const LoadPickupsRequested());
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeroHeader(context, userPoints, userName),
+                  Padding(
+                    padding: Spacing.pagePadding,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Spacing.gap24,
+                        _buildEcoScoreCard(userPoints),
+                        Spacing.gap20,
+                        _buildAIScanButton(context),
+                        Spacing.gap20,
+                        _buildStatsRow(),
+                        Spacing.gap20,
+                        _buildUpcomingPickup(context),
+                        Spacing.gap24,
+                        _buildQuickActions(context),
+                        Spacing.gap24,
+                        _buildRecentActivity(),
+                        const SizedBox(height: 100),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -82,11 +103,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ─── HERO HEADER with background image ────────────────────────
-  Widget _buildHeroHeader(BuildContext context, int userPoints, String userName) {
+  // ─── HERO HEADER ─────────────────────────────────────────────
+  Widget _buildHeroHeader(
+      BuildContext context, int userPoints, String userName) {
     final level = EcoLevels.fromPoints(userPoints);
     final levelNum = EcoLevels.levelNumber(userPoints);
-    // Use first letter of name for avatar, fallback to '?' if name is empty
     final avatarLetter =
         userName.isNotEmpty ? userName[0].toUpperCase() : '?';
 
@@ -96,7 +117,6 @@ class _DashboardScreenState extends State<DashboardScreen>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Background image
           ClipRRect(
             borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(32),
@@ -109,7 +129,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                   Container(color: AppColors.deepGreen),
             ),
           ),
-          // Gradient overlay
           Container(
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.only(
@@ -126,14 +145,12 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
             ),
           ),
-          // Content
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top row: avatar + notification
                   Row(
                     children: [
                       Container(
@@ -162,7 +179,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           children: [
                             Text(
                               '${level.display} • Level $levelNum',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontFamily: 'Inter',
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
@@ -185,8 +202,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                         ),
                       ),
                       GestureDetector(
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/notifications'),
+                        onTap: () => Navigator.pushNamed(
+                            context, '/notifications'),
                         child: Container(
                           width: 40,
                           height: 40,
@@ -201,7 +218,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ],
                   ),
                   const Spacer(),
-                  // Motivational message
                   Text(
                     'Every small action creates a ripple 🌊',
                     style: TextStyle(
@@ -220,7 +236,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ─── ECO SCORE CARD ───────────────────────────────────────────
+  // ─── ECO SCORE CARD ──────────────────────────────────────────
   Widget _buildEcoScoreCard(int userPoints) {
     final level = EcoLevels.fromPoints(userPoints);
     final nextLevel = EcoLevels.nextLevel(userPoints);
@@ -236,7 +252,6 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
       child: Row(
         children: [
-          // Score ring
           AnimatedBuilder(
             animation: _ringController,
             builder: (_, __) {
@@ -290,7 +305,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                     value: progress,
                     minHeight: 6,
                     backgroundColor: AppColors.surface,
-                    valueColor: AlwaysStoppedAnimation<Color>(level.color),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(level.color),
                   ),
                 ),
                 Spacing.gap8,
@@ -320,7 +336,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ─── AI SCAN BUTTON ───────────────────────────────────────────
+  // ─── AI SCAN BUTTON ──────────────────────────────────────────
   Widget _buildAIScanButton(BuildContext context) {
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/waste-scanner'),
@@ -380,18 +396,34 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ─── STATS ROW ────────────────────────────────────────────────
+  // ─── STATS ROW — wired from EcoBloc ──────────────────────────
   Widget _buildStatsRow() {
-    return Row(
-      children: [
-        Expanded(child: _statCard('12', 'Recycled', Icons.recycling_rounded)),
-        Spacing.hGap12,
-        Expanded(child: _statCard('8', 'Listed', Icons.sell_rounded)),
-        Spacing.hGap12,
-        Expanded(
-            child:
-                _statCard('3', 'Pickups', Icons.local_shipping_rounded)),
-      ],
+    return BlocBuilder<EcoBloc, EcoState>(
+      builder: (context, state) {
+        final stats = state is EcoLoaded ? state.stats : null;
+
+        final weightStr = stats != null
+            ? '${stats.totalWeightRecycled.toStringAsFixed(1)}kg'
+            : '—';
+        final listedStr = stats != null ? '${stats.itemsSold}' : '—';
+        final pickupStr =
+            stats != null ? '${stats.pickupsCompleted}' : '—';
+
+        return Row(
+          children: [
+            Expanded(
+                child: _statCard(
+                    weightStr, 'Recycled', Icons.recycling_rounded)),
+            Spacing.hGap12,
+            Expanded(
+                child: _statCard(listedStr, 'Sold', Icons.sell_rounded)),
+            Spacing.hGap12,
+            Expanded(
+                child: _statCard(
+                    pickupStr, 'Pickups', Icons.local_shipping_rounded)),
+          ],
+        );
+      },
     );
   }
 
@@ -410,7 +442,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           Text(value,
               style: const TextStyle(
                 fontFamily: 'Inter',
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               )),
@@ -426,60 +458,145 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ─── UPCOMING PICKUP ──────────────────────────────────────────
+  // ─── UPCOMING PICKUP — wired from PickupBloc ─────────────────
   Widget _buildUpcomingPickup(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, '/next-collection'),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.border, width: 1),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.schedule_rounded,
-                  color: AppColors.primaryGreen, size: 22),
+    return BlocBuilder<PickupBloc, PickupState>(
+      builder: (context, state) {
+        PickupRequest? next;
+
+        if (state is PickupLoaded) {
+          // Find the soonest pending/accepted/on-the-way pickup
+          final active = state.pickups.where((p) =>
+              p.status == PickupStatus.pending ||
+              p.status == PickupStatus.assigned ||
+              p.status == PickupStatus.accepted ||
+              p.status == PickupStatus.onTheWay);
+          if (active.isNotEmpty) {
+            // Sort by scheduled date ascending, then creation date
+            final sorted = active.toList()
+              ..sort((a, b) {
+                final aDate = a.scheduledDate ?? a.createdAt;
+                final bDate = b.scheduledDate ?? b.createdAt;
+                return aDate.compareTo(bDate);
+              });
+            next = sorted.first;
+          }
+        }
+
+        final String dateLabel;
+        final String statusLabel;
+
+        if (next != null) {
+          final scheduled = next.scheduledDate;
+          if (scheduled != null) {
+            final now = DateTime.now();
+            final diff = scheduled.difference(
+                DateTime(now.year, now.month, now.day));
+            if (diff.inDays == 0) {
+              dateLabel =
+                  'Today, ${next.timeSlot?.displayName ?? DateFormat('HH:mm').format(scheduled)}';
+            } else if (diff.inDays == 1) {
+              dateLabel =
+                  'Tomorrow, ${next.timeSlot?.displayName ?? DateFormat('HH:mm').format(scheduled)}';
+            } else {
+              dateLabel =
+                  '${DateFormat('EEE, MMM d').format(scheduled)} • ${next.timeSlot?.displayName ?? ''}';
+            }
+          } else {
+            dateLabel = 'Unscheduled';
+          }
+          statusLabel = next.status.displayName;
+        } else if (state is PickupLoading) {
+          dateLabel = 'Loading…';
+          statusLabel = '';
+        } else {
+          dateLabel = 'No upcoming pickup';
+          statusLabel = '';
+        }
+
+        return GestureDetector(
+          onTap: () => Navigator.pushNamed(context, '/next-collection'),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.border, width: 1),
             ),
-            Spacing.hGap12,
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Next Pickup',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      )),
-                  SizedBox(height: 2),
-                  Text('Tomorrow, 2:30 PM',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      )),
-                ],
-              ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.schedule_rounded,
+                      color: AppColors.primaryGreen, size: 22),
+                ),
+                Spacing.hGap12,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        next != null ? 'Next Pickup' : 'Pickups',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        dateLabel,
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if (statusLabel.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          statusLabel,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 11,
+                            color: _pickupStatusColor(next?.status),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppColors.textMuted, size: 22),
+              ],
             ),
-            const Icon(Icons.chevron_right_rounded,
-                color: AppColors.textMuted, size: 22),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  // ─── QUICK ACTIONS ────────────────────────────────────────────
+  Color _pickupStatusColor(PickupStatus? status) {
+    switch (status) {
+      case PickupStatus.pending:
+        return AppColors.warning;
+      case PickupStatus.assigned:
+        return const Color(0xFF9B59B6);
+      case PickupStatus.accepted:
+      case PickupStatus.onTheWay:
+        return AppColors.info;
+      default:
+        return AppColors.textTertiary;
+    }
+  }
+
+  // ─── QUICK ACTIONS ───────────────────────────────────────────
   Widget _buildQuickActions(BuildContext context) {
     return Row(
       children: [
@@ -500,10 +617,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _actionCard(
-      {required IconData icon,
-      required String label,
-      required VoidCallback onTap}) {
+  Widget _actionCard({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -541,41 +659,86 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  // ─── RECENT ACTIVITY ──────────────────────────────────────────
+  // ─── RECENT ACTIVITY — wired from EcoBloc point history ──────
   Widget _buildRecentActivity() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Recent Activity',
-            style: TextStyle(
-              fontFamily: 'Finlandica',
-              fontSize: 19,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            )),
-        Spacing.gap16,
-        _activityTile(
-          Icons.eco_rounded,
-          AppColors.success,
-          '🌱 +50 points — growing your impact!',
-          '2h ago',
-        ),
-        Spacing.gap8,
-        _activityTile(
-          Icons.favorite_rounded,
-          AppColors.accentOrange,
-          '💚 Someone wants your item',
-          '5h ago',
-        ),
-        Spacing.gap8,
-        _activityTile(
-          Icons.public_rounded,
-          AppColors.accentBlue,
-          '🌍 3.2kg saved from landfill!',
-          '1 day ago',
-        ),
-      ],
+    return BlocBuilder<EcoBloc, EcoState>(
+      builder: (context, state) {
+        final history = state is EcoLoaded ? state.history : <PointHistory>[];
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Recent Activity',
+                style: TextStyle(
+                  fontFamily: 'Finlandica',
+                  fontSize: 19,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                )),
+            Spacing.gap16,
+            if (history.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border, width: 1),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.eco_rounded,
+                        color: AppColors.textTertiary, size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      'No activity yet. Start recycling!',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ...history.take(5).map((entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _activityTile(
+                      _activityIcon(entry.reason),
+                      _activityColor(entry.points),
+                      '${entry.points > 0 ? '+' : ''}${entry.points} pts — ${entry.reason}',
+                      _formatActivityDate(entry.date),
+                    ),
+                  )),
+          ],
+        );
+      },
     );
+  }
+
+  IconData _activityIcon(String reason) {
+    final r = reason.toLowerCase();
+    if (r.contains('pickup')) return Icons.local_shipping_rounded;
+    if (r.contains('scan') || r.contains('waste')) return Icons.eco_rounded;
+    if (r.contains('sell') || r.contains('listing')) {
+      return Icons.favorite_rounded;
+    }
+    return Icons.public_rounded;
+  }
+
+  Color _activityColor(int points) {
+    if (points > 0) return AppColors.success;
+    return AppColors.accentOrange;
+  }
+
+  String _formatActivityDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return DateFormat('MMM d').format(date);
   }
 
   Widget _activityTile(
@@ -600,24 +763,25 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           Spacing.hGap12,
           Expanded(
-              child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  )),
-              Text(time,
-                  style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 12,
-                    color: AppColors.textTertiary,
-                  )),
-            ],
-          )),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    )),
+                Text(time,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    )),
+              ],
+            ),
+          ),
         ],
       ),
     );

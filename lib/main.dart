@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/constants/app_theme.dart';
 import 'package:felo_na/core/di/injection_container.dart' as di;
 import 'package:felo_na/core/services/push_notification_service.dart';
+import 'package:felo_na/firebase_options.dart';
 
 // BLoCs
 import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
@@ -13,6 +14,8 @@ import 'package:felo_na/features/pickup/presentation/bloc/pickup_bloc.dart';
 import 'package:felo_na/features/eco_score/presentation/bloc/eco_bloc.dart';
 import 'package:felo_na/features/notifications/presentation/bloc/notifications_bloc.dart';
 import 'package:felo_na/features/notifications/presentation/bloc/notifications_event.dart';
+import 'package:felo_na/features/messaging/presentation/bloc/messaging_bloc.dart';
+import 'package:felo_na/features/ai/presentation/bloc/ai_bloc.dart';
 
 // Auth screens
 import 'package:felo_na/features/auth/presentation/pages/splash_screen.dart';
@@ -24,6 +27,7 @@ import 'package:felo_na/features/auth/presentation/pages/forgot_password_screen.
 import 'package:felo_na/features/auth/presentation/pages/otp_screen.dart';
 import 'package:felo_na/features/auth/presentation/pages/reset_password_screen.dart';
 import 'package:felo_na/features/auth/presentation/pages/change_password_screen.dart';
+import 'package:felo_na/features/auth/presentation/pages/edit_profile_screen.dart';
 
 // AI screens
 import 'package:felo_na/features/ai/presentation/pages/waste_scanner_screen.dart';
@@ -35,6 +39,7 @@ import 'package:felo_na/features/marketplace/presentation/pages/dashboard_screen
 import 'package:felo_na/features/marketplace/presentation/pages/marketplace_screen.dart';
 import 'package:felo_na/features/marketplace/presentation/pages/create_listing_screen.dart';
 import 'package:felo_na/features/marketplace/presentation/pages/item_detail_screen.dart';
+import 'package:felo_na/features/marketplace/presentation/pages/seller_profile_screen.dart';
 
 // Pickup screens
 import 'package:felo_na/features/pickup/presentation/pages/next_collection_screen.dart';
@@ -45,6 +50,7 @@ import 'package:felo_na/features/pickup/presentation/pages/pickup_tracking_scree
 import 'package:felo_na/features/pickup/presentation/pages/pickup_history_screen.dart';
 import 'package:felo_na/features/pickup/presentation/pages/rate_pickup_screen.dart';
 import 'package:felo_na/features/pickup/presentation/pages/qr_scanner_screen.dart';
+import 'package:felo_na/features/pickup/presentation/pages/collector_jobs_screen.dart';
 
 // Eco Score screens
 import 'package:felo_na/features/eco_score/presentation/pages/eco_score_screen.dart';
@@ -59,24 +65,19 @@ void main() async {
 
   // Initialize Firebase
   if (kIsWeb) {
-    // Firebase web app not yet configured in Firebase Console.
-    // To enable: run `flutterfire configure` or add a web app in Firebase Console.
-    // For now, skip Firebase on web so the app can load.
+    // Web: attempt init with our options; gracefully degrade if web app ID is
+    // still a placeholder (i.e. the Firebase Console web app hasn't been added yet).
     try {
       await Firebase.initializeApp(
-        options: const FirebaseOptions(
-          apiKey: 'AIzaSyBAbRDyGgXLkwyMtC-fz3e1vGqGsyG1k98',
-          appId: '1:1062477866360:android:18a95740dd3341fdd5148d',
-          messagingSenderId: '1062477866360',
-          projectId: 'felona-72453',
-          storageBucket: 'felona-72453.firebasestorage.app',
-        ),
+        options: DefaultFirebaseOptions.web,
       );
     } catch (e) {
-      debugPrint('Firebase init failed on web: $e');
+      debugPrint('[Firebase] Web init skipped: $e');
     }
   } else {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
 
   // Initialize dependency injection container
@@ -143,6 +144,8 @@ class _FeloNaAppState extends State<FeloNaApp> {
         BlocProvider(create: (context) => di.sl<PickupBloc>()),
         BlocProvider(create: (context) => di.sl<EcoBloc>()),
         BlocProvider.value(value: _notificationsBloc),
+        BlocProvider.value(value: di.sl<MessagingBloc>()),
+        BlocProvider(create: (context) => di.sl<AiBloc>()),
       ],
       child: MaterialApp(
         title: 'FeloNa - Smart Waste Management',
@@ -187,6 +190,15 @@ class _FeloNaAppState extends State<FeloNaApp> {
                   pickupId: args['pickupId'] ?? '',
                 ),
               );
+            case '/seller-profile':
+              final args = settings.arguments as Map<String, dynamic>? ?? {};
+              return MaterialPageRoute(
+                builder: (_) => SellerProfileScreen(
+                  sellerId: args['sellerId'] ?? '',
+                  sellerName: args['sellerName'] ?? 'Seller',
+                  sellerAvatarUrl: args['sellerAvatarUrl'] as String?,
+                ),
+              );
             default:
               return null;
           }
@@ -213,7 +225,9 @@ class _FeloNaAppState extends State<FeloNaApp> {
           '/recycling-chat': (context) => const RecyclingChatScreen(),
           '/forgot-password': (context) => const ForgotPasswordScreen(),
           '/change-password': (context) => const ChangePasswordScreen(),
+          '/edit-profile': (context) => const EditProfileScreen(),
           '/leaderboard': (context) => const LeaderboardScreen(),
+          '/collector-jobs': (context) => const CollectorJobsScreen(),
         },
       ),
     );

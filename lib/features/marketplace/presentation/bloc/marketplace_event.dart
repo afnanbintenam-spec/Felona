@@ -68,3 +68,13 @@ class CreateListingRequested extends MarketplaceEvent {
 class LoadMyListingsRequested extends MarketplaceEvent {
   const LoadMyListingsRequested();
 }
+
+/// Event to load a specific seller's listings.
+class LoadSellerListingsRequested extends MarketplaceEvent {
+  final String sellerId;
+
+  const LoadSellerListingsRequested({required this.sellerId});
+
+  @override
+  List<Object?> get props => [sellerId];
+}

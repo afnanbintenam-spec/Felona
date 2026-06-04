@@ -20,6 +20,7 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
     on<ToggleFavoriteRequested>(_onToggleFavoriteRequested);
     on<CreateListingRequested>(_onCreateListingRequested);
     on<LoadMyListingsRequested>(_onLoadMyListingsRequested);
+    on<LoadSellerListingsRequested>(_onLoadSellerListingsRequested);
   }
 
   Future<void> _onLoadListingsRequested(
@@ -125,6 +126,20 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
     result.fold(
       (failure) => emit(MarketplaceError(message: failure.message)),
       (listings) => emit(MarketplaceLoaded(listings: listings)),
+    );
+  }
+
+  Future<void> _onLoadSellerListingsRequested(
+    LoadSellerListingsRequested event,
+    Emitter<MarketplaceState> emit,
+  ) async {
+    emit(const MarketplaceLoading());
+
+    final result = await _repository.getSellerListings(event.sellerId);
+
+    result.fold(
+      (failure) => emit(MarketplaceError(message: failure.message)),
+      (listings) => emit(SellerListingsLoaded(listings: listings)),
     );
   }
 }

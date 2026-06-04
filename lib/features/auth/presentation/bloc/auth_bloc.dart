@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:felo_na/core/network/api_client.dart';
 import 'package:felo_na/core/network/auth_interceptor.dart';
@@ -59,7 +59,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final user = UserModel.fromJson(responseData['user'] as Map<String, dynamic>);
         emit(Authenticated(user: user));
       } else if (response.statusCode == 401) {
-        final refreshed = await _tryRefreshToken();
+        final refreshed = await tryRefreshToken();
         if (refreshed) {
           final newToken = await _storage.read(key: TokenKeys.accessToken);
           final retryResponse = await _dio.get('/auth/me',
@@ -323,7 +323,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(Authenticated(user: user));
   }
 
-  Future<bool> _tryRefreshToken() async {
+  @visibleForTesting
+  Future<bool> tryRefreshToken() async {
     try {
       final refreshToken = await _storage.read(key: TokenKeys.refreshToken);
       if (refreshToken == null || refreshToken.isEmpty) return false;

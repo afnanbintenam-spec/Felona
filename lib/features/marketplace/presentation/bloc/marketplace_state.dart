@@ -53,3 +53,13 @@ class ListingCreated extends MarketplaceState {
 class CreatingListing extends MarketplaceState {
   const CreatingListing();
 }
+
+/// Seller's listings loaded.
+class SellerListingsLoaded extends MarketplaceState {
+  final List<Listing> listings;
+
+  const SellerListingsLoaded({required this.listings});
+
+  @override
+  List<Object?> get props => [listings];
+}

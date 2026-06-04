@@ -11,7 +11,7 @@ import 'package:felo_na/features/marketplace/presentation/pages/dashboard_screen
 import 'package:felo_na/features/marketplace/presentation/pages/buyer_dashboard_screen.dart';
 import 'package:felo_na/features/marketplace/presentation/pages/marketplace_screen.dart';
 import 'package:felo_na/features/marketplace/presentation/pages/my_offers_screen.dart';
-import 'package:felo_na/features/marketplace/presentation/pages/messages_screen.dart';
+import 'package:felo_na/features/messaging/presentation/pages/conversations_screen.dart';
 import 'package:felo_na/features/pickup/presentation/pages/next_collection_screen.dart';
 import 'package:felo_na/features/pickup/presentation/pages/collector_dashboard_screen.dart';
 import 'package:felo_na/features/pickup/presentation/pages/collector_jobs_screen.dart';
@@ -99,7 +99,7 @@ class _MainScreenState extends State<MainScreen> {
           const BuyerDashboardScreen(), // Home
           const MarketplaceScreen(), // Search
           const MyOffersScreen(), // My Offers
-          const MessagesScreen(), // Messages
+          const ConversationsScreen(), // Messages
           const ProfileScreen(), // Profile
         ];
 

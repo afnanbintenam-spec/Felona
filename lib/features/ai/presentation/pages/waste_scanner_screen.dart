@@ -8,8 +8,10 @@ import 'package:felo_na/core/network/api_client.dart';
 import 'package:felo_na/core/network/auth_interceptor.dart';
 import 'package:felo_na/core/network/web_storage.dart';
 
-/// AI Waste Scanner — Backend-powered with eco impact engine
-/// Uses /ai/scan endpoint which returns full analysis + saves to DB
+/// Waste Scanner — Scan waste, identify its type, and earn eco points.
+///
+/// The scanner identifies what type of waste an item is and awards eco points
+/// based on how beneficial recycling/reselling it is for the environment.
 class WasteScannerScreen extends StatefulWidget {
   const WasteScannerScreen({super.key});
 
@@ -46,7 +48,6 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
         _error = null;
       });
 
-      // Get auth token
       final token = await _storage.read(key: TokenKeys.accessToken);
       if (token == null) {
         setState(() {
@@ -56,12 +57,8 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
         return;
       }
 
-      // Upload to backend AI scan endpoint
       final formData = FormData.fromMap({
-        'image': MultipartFile.fromBytes(
-          bytes,
-          filename: 'scan.jpg',
-        ),
+        'image': MultipartFile.fromBytes(bytes, filename: 'scan.jpg'),
       });
 
       final response = await _dio.post(
@@ -71,12 +68,13 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
       );
 
       setState(() {
-        _result = response.data['scan'];
+        _result = response.data['scan'] as Map<String, dynamic>?;
         _isScanning = false;
       });
     } on DioException catch (e) {
       setState(() {
-        _error = e.response?.data?['error']?.toString() ?? 'Scan failed. Try again.';
+        _error = e.response?.data?['error']?.toString() ??
+            'Scan failed. Please try again.';
         _isScanning = false;
       });
     } catch (e) {
@@ -87,6 +85,14 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
     }
   }
 
+  void _reset() {
+    setState(() {
+      _result = null;
+      _imageBytes = null;
+      _error = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,18 +101,31 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: AppColors.textPrimary, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_rounded,
+            color: AppColors.textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.auto_awesome_rounded, color: AppColors.primaryGreen, size: 18),
+            Icon(
+              Icons.document_scanner_rounded,
+              color: AppColors.primaryGreen,
+              size: 18,
+            ),
             SizedBox(width: 8),
-            Text('AI Waste Scanner', style: TextStyle(
-              fontFamily: 'Finlandica', fontSize: 18, fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            )),
+            Text(
+              'Waste Scanner',
+              style: TextStyle(
+                fontFamily: 'Finlandica',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ],
         ),
       ),
@@ -126,6 +145,8 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
               if (_error != null) ...[
                 Spacing.gap16,
                 _buildError(),
+                Spacing.gap12,
+                _buildRetryButton(),
               ],
               Spacing.gap32,
             ],
@@ -135,7 +156,8 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
     );
   }
 
-  // ─── IMAGE AREA ─────────────────────────────────────────────
+  // ─── IMAGE AREA ────────────────────────────────────────────────────────────
+
   Widget _buildImageArea() {
     if (_imageBytes != null) {
       return ClipRRect(
@@ -143,7 +165,7 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
         child: Image.memory(
           _imageBytes!,
           width: double.infinity,
-          height: 250,
+          height: 260,
           fit: BoxFit.cover,
         ),
       );
@@ -151,7 +173,7 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
 
     return Container(
       width: double.infinity,
-      height: 250,
+      height: 260,
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(20),
@@ -161,24 +183,36 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 64, height: 64,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               color: AppColors.primaryGreen.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.camera_alt_rounded, size: 28, color: AppColors.primaryGreen),
+            child: const Icon(
+              Icons.document_scanner_rounded,
+              size: 32,
+              color: AppColors.primaryGreen,
+            ),
           ),
           Spacing.gap16,
-          const Text('Scan any waste item', style: TextStyle(
-            fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          )),
-          Spacing.gap4,
           const Text(
-            'AI identifies material, calculates impact,\nand earns you eco points',
+            'Scan a waste item',
+            style: TextStyle(
+              fontFamily: 'Finlandica',
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Spacing.gap6,
+          const Text(
+            'AI identifies the waste type\nand rewards you with eco points',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Inter', fontSize: 13, color: AppColors.textTertiary,
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: AppColors.textTertiary,
               height: 1.5,
             ),
           ),
@@ -187,44 +221,51 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
     );
   }
 
-  // ─── SCAN BUTTONS ───────────────────────────────────────────
+  // ─── SCAN BUTTONS ──────────────────────────────────────────────────────────
+
   Widget _buildScanButtons() {
     return Column(
       children: [
-        // Gallery (works on web + mobile)
         GestureDetector(
-          onTap: () => _pickAndScan(ImageSource.gallery),
+          onTap: () => _pickAndScan(ImageSource.camera),
           child: Container(
-            width: double.infinity, height: 56,
+            width: double.infinity,
+            height: 56,
             decoration: BoxDecoration(
               color: AppColors.primaryGreen,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                  blurRadius: 12, offset: const Offset(0, 4),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.photo_library_rounded, color: Colors.white, size: 22),
+                Icon(Icons.camera_alt_rounded, color: Colors.white, size: 22),
                 SizedBox(width: 12),
-                Text('Choose Photo', style: TextStyle(
-                  fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                )),
+                Text(
+                  'Take Photo',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
               ],
             ),
           ),
         ),
         Spacing.gap12,
-        // Camera (mobile only)
         GestureDetector(
-          onTap: () => _pickAndScan(ImageSource.camera),
+          onTap: () => _pickAndScan(ImageSource.gallery),
           child: Container(
-            width: double.infinity, height: 56,
+            width: double.infinity,
+            height: 56,
             decoration: BoxDecoration(
               color: AppColors.card,
               borderRadius: BorderRadius.circular(16),
@@ -233,12 +274,21 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.camera_alt_rounded, color: AppColors.textSecondary, size: 22),
-                SizedBox(width: 12),
-                Text('Take Photo', style: TextStyle(
-                  fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500,
+                Icon(
+                  Icons.photo_library_rounded,
                   color: AppColors.textSecondary,
-                )),
+                  size: 22,
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Choose from Gallery',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -247,10 +297,11 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
     );
   }
 
-  // ─── LOADING ────────────────────────────────────────────────
+  // ─── LOADING ───────────────────────────────────────────────────────────────
+
   Widget _buildLoading() {
     return Container(
-      padding: const EdgeInsets.all(40),
+      padding: const EdgeInsets.symmetric(vertical: 48),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(20),
@@ -259,74 +310,76 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
       child: const Column(
         children: [
           SizedBox(
-            width: 48, height: 48,
+            width: 44,
+            height: 44,
             child: CircularProgressIndicator(
-              color: AppColors.primaryGreen, strokeWidth: 3,
+              color: AppColors.primaryGreen,
+              strokeWidth: 3,
             ),
           ),
           SizedBox(height: 16),
-          Text('Analyzing waste...', style: TextStyle(
-            fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          )),
+          Text(
+            'Identifying waste...',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
           SizedBox(height: 4),
-          Text('Identifying material & calculating impact', style: TextStyle(
-            fontFamily: 'Inter', fontSize: 13, color: AppColors.textTertiary,
-          )),
+          Text(
+            'Analysing material type',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 13,
+              color: AppColors.textTertiary,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // ─── RESULTS ────────────────────────────────────────────────
+  // ─── RESULTS ───────────────────────────────────────────────────────────────
+
   Widget _buildResults() {
     final r = _result!;
-    final pointsEarned = r['points_earned'] ?? 0;
+    final points = (r['points_earned'] as num?)?.toInt() ?? 0;
 
     return Column(
       children: [
-        // Points Earned Banner (top)
-        if (pointsEarned > 0) _buildPointsBanner(pointsEarned, r['co2_saved_kg']),
+        // Eco points banner
+        _buildPointsBanner(points),
         Spacing.gap16,
 
-        // Identification Card
-        _buildIdentificationCard(r),
-        Spacing.gap12,
-
-        // Eco Impact Card
-        _buildImpactCard(r),
-        Spacing.gap12,
-
-        // Recommended Action Card
-        _buildActionCard(r),
-
-        if ((r['estimated_value']?['max'] ?? 0) > 0) ...[
-          Spacing.gap12,
-          _buildResaleCard(r),
-        ],
-
-        Spacing.gap12,
-        _buildEcoTipCard(r),
-
+        // Waste type card
+        _buildWasteTypeCard(r),
         Spacing.gap24,
-        // Scan Another button
+
+        // Scan another
         GestureDetector(
-          onTap: () => setState(() {
-            _result = null;
-            _imageBytes = null;
-          }),
+          onTap: _reset,
           child: Container(
-            width: double.infinity, height: 48,
+            width: double.infinity,
+            height: 48,
             decoration: BoxDecoration(
               color: AppColors.card,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.4)),
+              border: Border.all(
+                color: AppColors.primaryGreen.withValues(alpha: 0.4),
+              ),
             ),
             child: const Center(
-              child: Text('Scan Another Item', style: TextStyle(
-                fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600,
-                color: AppColors.primaryGreen,
-              )),
+              child: Text(
+                'Scan Another Item',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
             ),
           ),
         ),
@@ -334,153 +387,122 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
     );
   }
 
-  Widget _buildPointsBanner(int points, dynamic co2) {
+  Widget _buildPointsBanner(int points) {
+    final hasPoints = points > 0;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+      decoration: BoxDecoration(
+        color: hasPoints ? AppColors.primaryGreen : AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        border: hasPoints
+            ? null
+            : Border.all(color: AppColors.border, width: 1),
+        boxShadow: hasPoints
+            ? [
+                BoxShadow(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        children: [
+          Icon(
+            hasPoints ? Icons.eco_rounded : Icons.info_outline_rounded,
+            color: hasPoints ? Colors.white : AppColors.textSecondary,
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            hasPoints ? '+$points' : '0',
+            style: TextStyle(
+              fontFamily: 'Finlandica',
+              fontSize: 40,
+              fontWeight: FontWeight.w800,
+              color: hasPoints ? Colors.white : AppColors.textMuted,
+            ),
+          ),
+          Text(
+            hasPoints ? 'Eco Points Earned' : 'No points for this item',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: hasPoints
+                  ? Colors.white.withValues(alpha: 0.9)
+                  : AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWasteTypeCard(Map<String, dynamic> r) {
+    final category = (r['category'] as String? ?? 'Unknown');
+    final itemName = (r['item_name'] as String? ?? 'Unknown item');
+    final material = (r['material'] as String? ?? '');
+    final isRecyclable = (r['is_recyclable'] as String? ?? 'no');
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primaryGreen,
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryGreen.withValues(alpha: 0.3),
-            blurRadius: 16, offset: const Offset(0, 6),
-          ),
-        ],
+        border: Border.all(color: AppColors.border, width: 1),
       ),
-      child: Column(
-        children: [
-          Text('+$points', style: const TextStyle(
-            fontFamily: 'Inter', fontSize: 36, fontWeight: FontWeight.w800,
-            color: Colors.white,
-          )),
-          const Text('eco points earned', style: TextStyle(
-            fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500,
-            color: Colors.white,
-          )),
-          const SizedBox(height: 8),
-          if (co2 != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '🌍 ${_fmtNum(co2)}kg CO₂ saved from atmosphere',
-                style: const TextStyle(
-                  fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIdentificationCard(Map<String, dynamic> r) {
-    final confidence = ((r['confidence'] ?? 0) is num)
-        ? ((r['confidence'] ?? 0) * 100).toInt()
-        : 0;
-    return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header label
+          const Text(
+            'Waste Type',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              color: AppColors.textTertiary,
+              letterSpacing: 0.5,
+            ),
+          ),
+          Spacing.gap12,
+
+          // Category icon + name
           Row(
             children: [
-              _categoryIcon(r['category']),
+              _categoryIcon(category),
               Spacing.hGap12,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      r['item_name'] ?? 'Unknown',
+                      itemName,
                       style: const TextStyle(
-                        fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w700,
+                        fontFamily: 'Finlandica',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      '${r['material'] ?? 'Unknown'} • ${r['category'] ?? 'unknown'}',
+                      material.isNotEmpty
+                          ? '$category · $material'
+                          : category,
                       style: const TextStyle(
-                        fontFamily: 'Inter', fontSize: 13, color: AppColors.textTertiary,
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ],
                 ),
               ),
-              _recyclableBadge(r['is_recyclable']),
-            ],
-          ),
-          Spacing.gap16,
-          // Confidence bar
-          Row(
-            children: [
-              const Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.primaryGreen),
-              const SizedBox(width: 6),
-              Text('AI Confidence: $confidence%', style: const TextStyle(
-                fontFamily: 'Inter', fontSize: 12, color: AppColors.textSecondary,
-              )),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: confidence / 100,
-              minHeight: 6,
-              backgroundColor: AppColors.surface,
-              valueColor: const AlwaysStoppedAnimation(AppColors.primaryGreen),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImpactCard(Map<String, dynamic> r) {
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.public_rounded, color: AppColors.primaryGreen, size: 18),
-              SizedBox(width: 8),
-              Text('Environmental Impact', style: TextStyle(
-                fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              )),
-            ],
-          ),
-          Spacing.gap16,
-          Row(
-            children: [
-              Expanded(child: _impactStat(
-                '${_fmtNum(r['co2_saved_kg'])}kg',
-                'CO₂ saved',
-                Icons.cloud_outlined,
-              )),
-              Spacing.hGap12,
-              Expanded(child: _impactStat(
-                '${_fmtNum(r['landfill_saved_kg'])}kg',
-                'From landfill',
-                Icons.delete_outline_rounded,
-              )),
-            ],
-          ),
-          Spacing.gap8,
-          Row(
-            children: [
-              Expanded(child: _impactStat(
-                '${_fmtNum(r['estimated_weight_kg'])}kg',
-                'Item weight',
-                Icons.scale_rounded,
-              )),
-              Spacing.hGap12,
-              Expanded(child: _dangerStat(r['danger_level'] ?? 'none')),
+              _recyclableBadge(isRecyclable),
             ],
           ),
         ],
@@ -488,291 +510,7 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
     );
   }
 
-  Widget _buildActionCard(Map<String, dynamic> r) {
-    final action = r['recommended_action'] ?? 'dispose';
-    final reason = r['recommendation_reason'] ?? r['disposal_method'] ?? '';
-    final actionData = _actionData(action);
-
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  color: actionData['color'].withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(actionData['icon'], color: actionData['color'], size: 20),
-              ),
-              Spacing.hGap12,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Recommended Action', style: TextStyle(
-                      fontFamily: 'Inter', fontSize: 12, color: AppColors.textTertiary,
-                    )),
-                    Text(actionData['label'], style: const TextStyle(
-                      fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    )),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Spacing.gap12,
-          Text(reason, style: const TextStyle(
-            fontFamily: 'Inter', fontSize: 13, color: AppColors.textSecondary, height: 1.5,
-          )),
-          if (action == 'pickup' || action == 'sell') ...[
-            Spacing.gap16,
-            GestureDetector(
-              onTap: () {
-                if (action == 'pickup') {
-                  Navigator.pushNamed(context, '/create-pickup');
-                } else {
-                  Navigator.pushNamed(context, '/create-listing');
-                }
-              },
-              child: Container(
-                width: double.infinity, height: 44,
-                decoration: BoxDecoration(
-                  color: actionData['color'],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    action == 'pickup' ? 'Schedule Pickup' : 'List for Sale',
-                    style: const TextStyle(
-                      fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResaleCard(Map<String, dynamic> r) {
-    final value = r['estimated_value'];
-    return _card(
-      child: Row(
-        children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.accentYellow.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.savings_rounded, color: AppColors.accentYellow, size: 20),
-          ),
-          Spacing.hGap12,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Estimated Resale Value', style: TextStyle(
-                  fontFamily: 'Inter', fontSize: 12, color: AppColors.textTertiary,
-                )),
-                Text(
-                  '৳${_fmtNum(value['min'])} - ৳${_fmtNum(value['max'])}',
-                  style: const TextStyle(
-                    fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEcoTipCard(Map<String, dynamic> r) {
-    return _card(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40, height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.primaryGreen.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.lightbulb_outline_rounded, color: AppColors.primaryGreen, size: 20),
-          ),
-          Spacing.hGap12,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Did you know?', style: TextStyle(
-                  fontFamily: 'Inter', fontSize: 12, color: AppColors.textTertiary,
-                )),
-                const SizedBox(height: 2),
-                Text(
-                  r['eco_tip'] ?? '',
-                  style: const TextStyle(
-                    fontFamily: 'Inter', fontSize: 13, color: AppColors.textPrimary, height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── HELPERS ────────────────────────────────────────────────
-  Widget _card({required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border, width: 1),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _impactStat(String value, String label, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: AppColors.textTertiary),
-          const SizedBox(height: 6),
-          Text(value, style: const TextStyle(
-            fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          )),
-          Text(label, style: const TextStyle(
-            fontFamily: 'Inter', fontSize: 11, color: AppColors.textTertiary,
-          )),
-        ],
-      ),
-    );
-  }
-
-  Widget _dangerStat(String level) {
-    Color color;
-    switch (level) {
-      case 'high': color = AppColors.error; break;
-      case 'medium': color = AppColors.warning; break;
-      case 'low': color = AppColors.accentYellow; break;
-      default: color = AppColors.success;
-    }
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.warning_amber_rounded, size: 16, color: color),
-          const SizedBox(height: 6),
-          Text(level[0].toUpperCase() + level.substring(1), style: TextStyle(
-            fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w700, color: color,
-          )),
-          const Text('Danger', style: TextStyle(
-            fontFamily: 'Inter', fontSize: 11, color: AppColors.textTertiary,
-          )),
-        ],
-      ),
-    );
-  }
-
-  Widget _categoryIcon(String? category) {
-    final cat = (category ?? '').toLowerCase();
-    final IconData icon;
-    final Color color;
-    switch (cat) {
-      case 'plastic': icon = Icons.water_drop_rounded; color = const Color(0xFF42A5F5); break;
-      case 'paper': icon = Icons.description_rounded; color = const Color(0xFFFFB74D); break;
-      case 'metal': icon = Icons.hardware_rounded; color = const Color(0xFF78909C); break;
-      case 'glass': icon = Icons.wine_bar_rounded; color = const Color(0xFF26A69A); break;
-      case 'electronics': icon = Icons.devices_rounded; color = const Color(0xFFAB47BC); break;
-      case 'organic': icon = Icons.eco_rounded; color = const Color(0xFF66BB6A); break;
-      case 'textile': icon = Icons.checkroom_rounded; color = const Color(0xFFFF8A65); break;
-      default: icon = Icons.category_rounded; color = AppColors.textTertiary;
-    }
-    return Container(
-      width: 48, height: 48,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(icon, color: color, size: 24),
-    );
-  }
-
-  Widget _recyclableBadge(String? status) {
-    final s = (status ?? 'no').toLowerCase();
-    Color bg, text;
-    String label;
-    if (s == 'yes') {
-      bg = AppColors.primaryGreen.withValues(alpha: 0.12);
-      text = AppColors.primaryGreen;
-      label = '♻️ Yes';
-    } else if (s == 'partially') {
-      bg = AppColors.warning.withValues(alpha: 0.12);
-      text = AppColors.warning;
-      label = '⚠️ Partial';
-    } else {
-      bg = AppColors.error.withValues(alpha: 0.12);
-      text = AppColors.error;
-      label = '✕ No';
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(label, style: TextStyle(
-        fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w600, color: text,
-      )),
-    );
-  }
-
-  Map<String, dynamic> _actionData(String action) {
-    switch (action) {
-      case 'recycle':
-        return {'icon': Icons.recycling_rounded, 'color': AppColors.primaryGreen, 'label': 'Recycle ♻️'};
-      case 'reuse':
-        return {'icon': Icons.refresh_rounded, 'color': AppColors.tealGreen, 'label': 'Reuse 🔄'};
-      case 'sell':
-        return {'icon': Icons.storefront_rounded, 'color': AppColors.accentYellow, 'label': 'Sell on Marketplace 💰'};
-      case 'pickup':
-        return {'icon': Icons.local_shipping_rounded, 'color': AppColors.primaryGreen, 'label': 'Schedule Pickup 🚛'};
-      default:
-        return {'icon': Icons.delete_outline_rounded, 'color': AppColors.textSecondary, 'label': 'Dispose Properly'};
-    }
-  }
-
-  String _fmtNum(dynamic value) {
-    if (value == null) return '0';
-    if (value is num) return value.toStringAsFixed(value % 1 == 0 ? 0 : 2);
-    final parsed = double.tryParse(value.toString());
-    if (parsed == null) return value.toString();
-    return parsed.toStringAsFixed(parsed % 1 == 0 ? 0 : 2);
-  }
+  // ─── ERROR ─────────────────────────────────────────────────────────────────
 
   Widget _buildError() {
     return Container(
@@ -786,10 +524,133 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
         children: [
           const Icon(Icons.error_outline, color: AppColors.error, size: 22),
           Spacing.hGap12,
-          Expanded(child: Text(_error!, style: const TextStyle(
-            fontFamily: 'Inter', fontSize: 13, color: AppColors.error,
-          ))),
+          Expanded(
+            child: Text(
+              _error!,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 13,
+                color: AppColors.error,
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildRetryButton() {
+    return GestureDetector(
+      onTap: _reset,
+      child: Container(
+        width: double.infinity,
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: const Center(
+          child: Text(
+            'Try Again',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── HELPERS ───────────────────────────────────────────────────────────────
+
+  Widget _categoryIcon(String category) {
+    final cat = category.toLowerCase();
+    final IconData icon;
+    final Color color;
+
+    switch (cat) {
+      case 'plastic':
+        icon = Icons.water_drop_rounded;
+        color = const Color(0xFF42A5F5);
+        break;
+      case 'paper':
+        icon = Icons.description_rounded;
+        color = const Color(0xFFFFB74D);
+        break;
+      case 'metal':
+        icon = Icons.hardware_rounded;
+        color = const Color(0xFF78909C);
+        break;
+      case 'glass':
+        icon = Icons.wine_bar_rounded;
+        color = const Color(0xFF26A69A);
+        break;
+      case 'electronics':
+        icon = Icons.devices_rounded;
+        color = const Color(0xFFAB47BC);
+        break;
+      case 'organic':
+        icon = Icons.eco_rounded;
+        color = const Color(0xFF66BB6A);
+        break;
+      case 'textile':
+        icon = Icons.checkroom_rounded;
+        color = const Color(0xFFFF8A65);
+        break;
+      default:
+        icon = Icons.category_rounded;
+        color = AppColors.textTertiary;
+    }
+
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Icon(icon, color: color, size: 26),
+    );
+  }
+
+  Widget _recyclableBadge(String status) {
+    final s = status.toLowerCase();
+    final Color bg;
+    final Color text;
+    final String label;
+
+    if (s == 'yes') {
+      bg = AppColors.primaryGreen.withValues(alpha: 0.12);
+      text = AppColors.primaryGreen;
+      label = '♻️ Recyclable';
+    } else if (s == 'partially') {
+      bg = AppColors.warning.withValues(alpha: 0.12);
+      text = AppColors.warning;
+      label = '⚠️ Partial';
+    } else {
+      bg = AppColors.error.withValues(alpha: 0.12);
+      text = AppColors.error;
+      label = '✕ Not recyclable';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: text,
+        ),
       ),
     );
   }

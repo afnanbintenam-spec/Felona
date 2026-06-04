@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Storage keys for auth tokens.
@@ -21,7 +22,11 @@ class TokenKeys {
 /// - Forcing logout when refresh fails
 class AuthRefreshInterceptor extends QueuedInterceptor {
   final Dio _dio;
-  final FlutterSecureStorage _storage;
+
+  /// The secure storage instance. Exposed as protected for subclassing in tests.
+  @visibleForTesting
+  final FlutterSecureStorage storage;
+
   final String _baseUrl;
   final void Function()? onForceLogout;
 
@@ -33,7 +38,7 @@ class AuthRefreshInterceptor extends QueuedInterceptor {
     required String baseUrl,
     this.onForceLogout,
   })  : _dio = dio,
-        _storage = storage,
+        storage = storage,
         _baseUrl = baseUrl;
 
   @override
@@ -56,7 +61,7 @@ class AuthRefreshInterceptor extends QueuedInterceptor {
     final needsAuth = !noAuthPaths.any((p) => options.path.contains(p));
 
     if (needsAuth) {
-      final token = await _storage.read(key: TokenKeys.accessToken);
+      final token = await storage.read(key: TokenKeys.accessToken);
       if (token != null && token.isNotEmpty) {
         options.headers['Authorization'] = 'Bearer $token';
       }
@@ -88,12 +93,12 @@ class AuthRefreshInterceptor extends QueuedInterceptor {
     }
 
     // Attempt token refresh
-    final refreshed = await _refreshToken();
+    final refreshed = await refreshToken();
 
     if (refreshed) {
       // Retry the original request with new token
       try {
-        final newToken = await _storage.read(key: TokenKeys.accessToken);
+        final newToken = await storage.read(key: TokenKeys.accessToken);
         final opts = err.requestOptions;
         opts.headers['Authorization'] = 'Bearer $newToken';
 
@@ -111,14 +116,16 @@ class AuthRefreshInterceptor extends QueuedInterceptor {
 
   /// Attempts to refresh the access token using the stored refresh token.
   /// Returns true if refresh succeeded, false otherwise.
-  Future<bool> _refreshToken() async {
+  ///
+  /// Overridable for testing via subclass (see @visibleForTesting note).
+  Future<bool> refreshToken() async {
     if (_isRefreshing) return false;
     _isRefreshing = true;
 
     try {
-      final refreshToken = await _storage.read(key: TokenKeys.refreshToken);
+      final refreshTokenValue = await storage.read(key: TokenKeys.refreshToken);
 
-      if (refreshToken == null || refreshToken.isEmpty) {
+      if (refreshTokenValue == null || refreshTokenValue.isEmpty) {
         return false;
       }
 
@@ -132,7 +139,7 @@ class AuthRefreshInterceptor extends QueuedInterceptor {
 
       final response = await refreshDio.post(
         '/auth/refresh',
-        data: {'refresh_token': refreshToken},
+        data: {'refresh_token': refreshTokenValue},
       );
 
       if (response.statusCode == 200) {
@@ -143,7 +150,7 @@ class AuthRefreshInterceptor extends QueuedInterceptor {
             response.data['refresh_token'];
 
         if (newAccessToken != null) {
-          await _storage.write(
+          await storage.write(
             key: TokenKeys.accessToken,
             value: newAccessToken as String,
           );
@@ -151,7 +158,7 @@ class AuthRefreshInterceptor extends QueuedInterceptor {
 
         // If backend rotates refresh tokens, save the new one
         if (newRefreshToken != null) {
-          await _storage.write(
+          await storage.write(
             key: TokenKeys.refreshToken,
             value: newRefreshToken as String,
           );
@@ -170,8 +177,8 @@ class AuthRefreshInterceptor extends QueuedInterceptor {
 
   /// Clears all tokens and triggers logout callback.
   Future<void> _clearTokensAndLogout() async {
-    await _storage.delete(key: TokenKeys.accessToken);
-    await _storage.delete(key: TokenKeys.refreshToken);
+    await storage.delete(key: TokenKeys.accessToken);
+    await storage.delete(key: TokenKeys.refreshToken);
     onForceLogout?.call();
   }
 }

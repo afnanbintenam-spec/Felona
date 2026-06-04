@@ -105,4 +105,14 @@ class MarketplaceRepositoryImpl implements MarketplaceRepository {
       return Left(ErrorHandler.handleException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, List<Listing>>> getSellerListings(String sellerId) async {
+    try {
+      final listings = await _remoteDataSource.getSellerListings(sellerId);
+      return Right(listings);
+    } catch (e) {
+      return Left(ErrorHandler.handleException(e));
+    }
+  }
 }

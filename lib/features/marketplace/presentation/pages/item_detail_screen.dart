@@ -8,6 +8,10 @@ import 'package:felo_na/core/widgets/chips/status_badge.dart';
 import 'package:felo_na/features/marketplace/domain/entities/listing.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_bloc.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_event.dart';
+import 'package:felo_na/features/messaging/presentation/bloc/messaging_bloc.dart';
+import 'package:felo_na/features/messaging/presentation/bloc/messaging_event.dart';
+import 'package:felo_na/features/messaging/presentation/bloc/messaging_state.dart';
+import 'package:felo_na/features/messaging/presentation/pages/chat_screen.dart';
 
 /// Item detail screen showing full listing information.
 ///
@@ -83,10 +87,27 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   void _messageSeller() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Chat feature coming soon!'),
-        backgroundColor: AppColors.info,
+    if (_listing == null) return;
+    // Open or create a conversation with the seller about this listing
+    context.read<MessagingBloc>().add(
+          OpenConversationRequested(
+            listingId: _listing!.id,
+            sellerId: _listing!.sellerId,
+            listingTitle: _listing!.title,
+          ),
+        );
+    // Listen for the conversation to open and navigate
+    _navigateToChat();
+  }
+
+  void _navigateToChat() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => BlocProvider.value(
+        value: context.read<MessagingBloc>(),
+        child: _ChatLoadingSheet(listing: _listing!),
       ),
     );
   }
@@ -377,7 +398,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget _buildSellerInfo(Listing listing) {
     return InkWell(
       onTap: () {
-        // TODO: Navigate to seller profile
+        Navigator.pushNamed(
+          context,
+          '/seller-profile',
+          arguments: {
+            'sellerId': listing.sellerId,
+            'sellerName': listing.sellerName,
+            'sellerAvatarUrl': listing.sellerAvatarUrl,
+          },
+        );
       },
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -559,5 +588,79 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     } else {
       return 'Just now';
     }
+  }
+}
+
+/// Bottom sheet shown while a conversation is being opened/created.
+/// Navigates to ChatScreen once the conversation is ready.
+class _ChatLoadingSheet extends StatefulWidget {
+  final Listing listing;
+  const _ChatLoadingSheet({required this.listing});
+
+  @override
+  State<_ChatLoadingSheet> createState() => _ChatLoadingSheetState();
+}
+
+class _ChatLoadingSheetState extends State<_ChatLoadingSheet> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<MessagingBloc>().add(
+          OpenConversationRequested(
+            listingId: widget.listing.id,
+            sellerId: widget.listing.sellerId,
+            listingTitle: widget.listing.title,
+          ),
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<MessagingBloc, MessagingState>(
+      listener: (context, state) {
+        if (state is ConversationOpened) {
+          Navigator.pop(context); // close sheet
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BlocProvider.value(
+                value: context.read<MessagingBloc>(),
+                child: ChatScreen(conversation: state.conversation),
+              ),
+            ),
+          );
+        } else if (state is MessagingError) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open chat: ${state.message}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      },
+      child: Container(
+        height: 140,
+        decoration: const BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: AppColors.primaryGreen),
+            SizedBox(height: 16),
+            Text(
+              'Opening conversation…',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

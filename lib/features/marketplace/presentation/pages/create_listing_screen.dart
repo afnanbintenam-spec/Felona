@@ -6,11 +6,27 @@ import 'package:image_picker/image_picker.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/app_text_styles.dart';
 import 'package:felo_na/core/constants/enums.dart';
+import 'package:felo_na/core/services/gemini_service.dart';
 import 'package:felo_na/core/widgets/buttons/primary_button.dart';
 import 'package:felo_na/core/widgets/inputs/custom_text_field.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_bloc.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_event.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_state.dart';
+
+/// Draft data holder — survives screen pop but not app restart.
+class _ListingDraft {
+  final String title;
+  final String description;
+  final String price;
+  final ListingCategory? category;
+
+  const _ListingDraft({
+    required this.title,
+    required this.description,
+    required this.price,
+    required this.category,
+  });
+}
 
 /// Create listing screen for adding new marketplace items.
 ///
@@ -20,8 +36,12 @@ import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_state
 /// - Category selection
 /// - Form validation
 /// - BLoC integration
+/// - Save draft (in-memory, persists across navigations within the session)
 class CreateListingScreen extends StatefulWidget {
   const CreateListingScreen({super.key});
+
+  // Session-level draft — shared across screen instances
+  static _ListingDraft? _savedDraft;
 
   @override
   State<CreateListingScreen> createState() => _CreateListingScreenState();
@@ -37,6 +57,21 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
   final List<XFile> _selectedImages = [];
   ListingCategory? _selectedCategory;
   final int _maxImages = 5;
+  bool _isSuggestingPrice = false;
+  String? _priceSuggestion;
+
+  @override
+  void initState() {
+    super.initState();
+    // Restore saved draft if one exists
+    final draft = CreateListingScreen._savedDraft;
+    if (draft != null) {
+      _titleController.text = draft.title;
+      _descriptionController.text = draft.description;
+      _priceController.text = draft.price;
+      _selectedCategory = draft.category;
+    }
+  }
 
   @override
   void dispose() {
@@ -44,6 +79,22 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     _descriptionController.dispose();
     _priceController.dispose();
     super.dispose();
+  }
+
+  void _saveDraft() {
+    CreateListingScreen._savedDraft = _ListingDraft(
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim(),
+      price: _priceController.text.trim(),
+      category: _selectedCategory,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Draft saved — it\'ll be here when you return'),
+        backgroundColor: AppColors.info,
+      ),
+    );
+    Navigator.pop(context);
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -84,6 +135,126 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
     setState(() {
       _selectedImages.removeAt(index);
     });
+  }
+
+  Future<void> _suggestPrice() async {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter a title first so AI can suggest a price'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSuggestingPrice = true;
+      _priceSuggestion = null;
+    });
+
+    try {
+      final gemini = GeminiService();
+      final condition = 'Used'; // default; could be a field in the future
+      final category = _selectedCategory?.displayName ?? 'General';
+      final suggestion = await gemini.suggestPrice(title, condition, category);
+      setState(() => _priceSuggestion = suggestion);
+      if (mounted) {
+        _showPriceSuggestionDialog(suggestion);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Price suggestion failed: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSuggestingPrice = false);
+    }
+  }
+
+  void _showPriceSuggestionDialog(String suggestion) {
+    // Extract numeric value if present, e.g. "Estimated: ৳500 - ৳800"
+    final regex = RegExp(r'৳(\d+)');
+    final matches = regex.allMatches(suggestion).toList();
+    final avgPrice = matches.isNotEmpty
+        ? ((int.tryParse(matches.first.group(1) ?? '') ?? 0) +
+                (matches.length > 1
+                    ? (int.tryParse(matches.last.group(1) ?? '') ?? 0)
+                    : 0)) ~/
+            (matches.length > 1 ? 2 : 1)
+        : null;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.auto_awesome,
+                  color: AppColors.primaryGreen, size: 18),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'AI Price Suggestion',
+              style: TextStyle(
+                fontFamily: 'Finlandica',
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              suggestion,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Dismiss',
+                style: TextStyle(color: AppColors.textTertiary)),
+          ),
+          if (avgPrice != null && avgPrice > 0)
+            TextButton(
+              onPressed: () {
+                _priceController.text = avgPrice.toString();
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'Use This Price',
+                style: TextStyle(
+                  color: AppColors.primaryGreen,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   void _showImageSourceDialog() {
@@ -224,15 +395,7 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              // TODO: Save as draft
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Draft saved!'),
-                  backgroundColor: AppColors.info,
-                ),
-              );
-            },
+            onPressed: _saveDraft,
             child: const Text('Save Draft'),
           ),
         ],
@@ -240,6 +403,8 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
       body: BlocListener<MarketplaceBloc, MarketplaceState>(
         listener: (context, state) {
           if (state is ListingCreated) {
+            // Clear any saved draft on successful publish
+            CreateListingScreen._savedDraft = null;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Listing created successfully!'),
@@ -328,6 +493,56 @@ class _CreateListingScreenState extends State<CreateListingScreen> {
                       keyboardType: TextInputType.number,
                       enabled: !isLoading,
                       prefixIcon: const Icon(Icons.currency_exchange),
+                    ),
+                    const SizedBox(height: 8),
+                    // AI price suggestion button
+                    GestureDetector(
+                      onTap: isLoading || _isSuggestingPrice
+                          ? null
+                          : _suggestPrice,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen
+                              .withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primaryGreen
+                                .withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_isSuggestingPrice)
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primaryGreen,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            else
+                              const Icon(Icons.auto_awesome,
+                                  color: AppColors.primaryGreen, size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              _isSuggestingPrice
+                                  ? 'Getting AI suggestion…'
+                                  : '✨ Suggest price with AI',
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primaryGreen,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
 

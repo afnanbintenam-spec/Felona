@@ -4,8 +4,17 @@ import 'package:get_it/get_it.dart';
 
 import '../network/api_client.dart';
 import '../network/secure_storage_service.dart';
+import '../services/gemini_service.dart';
 import '../services/image_upload_service.dart';
 import '../services/push_notification_service.dart';
+
+// AI
+import '../../features/ai/data/datasources/ai_remote_data_source.dart';
+import '../../features/ai/data/repositories/ai_repository_impl.dart';
+import '../../features/ai/domain/repositories/ai_repository.dart';
+import '../../features/ai/domain/usecases/scan_waste_usecase.dart';
+import '../../features/ai/domain/usecases/chat_usecase.dart';
+import '../../features/ai/presentation/bloc/ai_bloc.dart';
 
 // Marketplace
 import '../../features/marketplace/data/datasources/marketplace_remote_data_source.dart';
@@ -30,6 +39,12 @@ import '../../features/notifications/data/datasources/notifications_remote_data_
 import '../../features/notifications/data/repositories/notifications_repository_impl.dart';
 import '../../features/notifications/domain/repositories/notifications_repository.dart';
 import '../../features/notifications/presentation/bloc/notifications_bloc.dart';
+
+// Messaging
+import '../../features/messaging/data/datasources/messaging_remote_data_source.dart';
+import '../../features/messaging/data/repositories/messaging_repository_impl.dart';
+import '../../features/messaging/domain/repositories/messaging_repository.dart';
+import '../../features/messaging/presentation/bloc/messaging_bloc.dart';
 
 /// Global service locator instance.
 final sl = GetIt.instance;
@@ -77,13 +92,53 @@ Future<void> initializeDependencies() async {
     () => PushNotificationService(),
   );
 
+  // Gemini AI Service
+  sl.registerLazySingleton<GeminiService>(() => GeminiService());
+
   // ========================================================================
   // Feature Dependencies
   // ========================================================================
+  _initAiDependencies();
   _initMarketplaceDependencies();
   _initPickupDependencies();
   _initEcoScoreDependencies();
   _initNotificationDependencies();
+  _initMessagingDependencies();
+}
+
+// ========================================================================
+// AI
+// ========================================================================
+void _initAiDependencies() {
+  // Data source
+  sl.registerLazySingleton<AiRemoteDataSource>(
+    () => AiRemoteDataSourceImpl(
+      apiClient: sl<ApiClient>(),
+      geminiService: sl<GeminiService>(),
+    ),
+  );
+
+  // Repository
+  sl.registerLazySingleton<AiRepository>(
+    () => AiRepositoryImpl(remoteDataSource: sl<AiRemoteDataSource>()),
+  );
+
+  // Use cases
+  sl.registerLazySingleton<ScanWasteUseCase>(
+    () => ScanWasteUseCase(sl<AiRepository>()),
+  );
+  sl.registerLazySingleton<ChatUseCase>(
+    () => ChatUseCase(sl<AiRepository>()),
+  );
+
+  // BLoC
+  sl.registerFactory<AiBloc>(
+    () => AiBloc(
+      scanWasteUseCase: sl<ScanWasteUseCase>(),
+      chatUseCase: sl<ChatUseCase>(),
+      repository: sl<AiRepository>(),
+    ),
+  );
 }
 
 // ========================================================================
@@ -163,5 +218,25 @@ void _initNotificationDependencies() {
   // BLoC
   sl.registerFactory<NotificationsBloc>(
     () => NotificationsBloc(repository: sl<NotificationsRepository>()),
+  );
+}
+
+// ========================================================================
+// Messaging
+// ========================================================================
+void _initMessagingDependencies() {
+  // Data source
+  sl.registerLazySingleton<MessagingRemoteDataSource>(
+    () => MessagingRemoteDataSourceImpl(apiClient: sl<ApiClient>()),
+  );
+
+  // Repository
+  sl.registerLazySingleton<MessagingRepository>(
+    () => MessagingRepositoryImpl(remoteDataSource: sl<MessagingRemoteDataSource>()),
+  );
+
+  // BLoC — singleton so conversations stay loaded across tab switches
+  sl.registerLazySingleton<MessagingBloc>(
+    () => MessagingBloc(repository: sl<MessagingRepository>()),
   );
 }

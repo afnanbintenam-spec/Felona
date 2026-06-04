@@ -20,4 +20,5 @@ abstract class MarketplaceRepository {
   Future<Either<Failure, void>> toggleFavorite(String listingId);
   Future<Either<Failure, Listing>> getListingById(String id);
   Future<Either<Failure, void>> deleteListing(String id);
+  Future<Either<Failure, List<Listing>>> getSellerListings(String sellerId);
 }
