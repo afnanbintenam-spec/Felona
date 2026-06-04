@@ -345,12 +345,17 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
 
   Widget _buildResults() {
     final r = _result!;
-    final points = (r['points_earned'] as num?)?.toInt() ?? 0;
+    final isRecyclable = (r['is_recyclable'] as String? ?? 'no').toLowerCase();
+    final rawPoints = (r['points_earned'] as num?)?.toInt() ?? 0;
+    // Only award points if item is recyclable or partially recyclable
+    final points = (isRecyclable == 'yes' || isRecyclable == 'partially')
+        ? rawPoints
+        : 0;
 
     return Column(
       children: [
         // Eco points banner
-        _buildPointsBanner(points),
+        _buildPointsBanner(points, rawPoints, isRecyclable),
         Spacing.gap16,
 
         // Waste type card
@@ -387,21 +392,84 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
     );
   }
 
-  Widget _buildPointsBanner(int points) {
-    final hasPoints = points > 0;
+  Widget _buildPointsBanner(int points, int potentialPoints, String isRecyclable) {
+    final earned = points > 0;
+    final isNotRecyclable = isRecyclable == 'no';
+    final isPartial = isRecyclable == 'partially';
+
+    // For non-recyclable items, show potential points (greyed out/muted style)
+    if (isNotRecyclable) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border, width: 1),
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.eco_rounded,
+              color: AppColors.textTertiary,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              potentialPoints > 0 ? '+$potentialPoints' : '0',
+              style: const TextStyle(
+                fontFamily: 'Finlandica',
+                fontSize: 40,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textTertiary,
+              ),
+            ),
+            const Text(
+              'Eco Points if properly disposed',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textTertiary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Not recyclable — no points awarded',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.error,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Recyclable or partially recyclable
+    final bannerColor = isPartial ? AppColors.warning : AppColors.primaryGreen;
+    final label = isPartial ? 'Eco Points if fully recycled' : 'Eco Points Earned';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
       decoration: BoxDecoration(
-        color: hasPoints ? AppColors.primaryGreen : AppColors.card,
+        color: earned ? bannerColor : AppColors.card,
         borderRadius: BorderRadius.circular(20),
-        border: hasPoints
-            ? null
-            : Border.all(color: AppColors.border, width: 1),
-        boxShadow: hasPoints
+        border: earned ? null : Border.all(color: AppColors.border, width: 1),
+        boxShadow: earned
             ? [
                 BoxShadow(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.25),
+                  color: bannerColor.withValues(alpha: 0.25),
                   blurRadius: 20,
                   offset: const Offset(0, 6),
                 ),
@@ -411,27 +479,27 @@ class _WasteScannerScreenState extends State<WasteScannerScreen> {
       child: Column(
         children: [
           Icon(
-            hasPoints ? Icons.eco_rounded : Icons.info_outline_rounded,
-            color: hasPoints ? Colors.white : AppColors.textSecondary,
+            earned ? Icons.eco_rounded : Icons.info_outline_rounded,
+            color: earned ? Colors.white : AppColors.textSecondary,
             size: 32,
           ),
           const SizedBox(height: 8),
           Text(
-            hasPoints ? '+$points' : '0',
+            earned ? '+$points' : '0',
             style: TextStyle(
               fontFamily: 'Finlandica',
               fontSize: 40,
               fontWeight: FontWeight.w800,
-              color: hasPoints ? Colors.white : AppColors.textMuted,
+              color: earned ? Colors.white : AppColors.textMuted,
             ),
           ),
           Text(
-            hasPoints ? 'Eco Points Earned' : 'No points for this item',
+            earned ? label : 'No points for this item',
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: hasPoints
+              color: earned
                   ? Colors.white.withValues(alpha: 0.9)
                   : AppColors.textMuted,
             ),
