@@ -89,22 +89,24 @@ class ListingModel extends Listing {
 
   static ListingCategory _parseCategory(String value) {
     switch (value.toLowerCase()) {
-      case 'furniture':
-        return ListingCategory.furniture;
+      case 'plastic':
+        return ListingCategory.plastic;
+      case 'metal':
+        return ListingCategory.metal;
+      case 'paper':
+        return ListingCategory.paper;
+      case 'glass':
+        return ListingCategory.glass;
       case 'electronics':
         return ListingCategory.electronics;
-      case 'books':
-        return ListingCategory.books;
-      case 'appliances':
-        return ListingCategory.appliances;
-      case 'office':
-        return ListingCategory.office;
-      case 'reusable':
-        return ListingCategory.reusable;
-      case 'scrap':
-        return ListingCategory.scrap;
+      case 'textile':
+        return ListingCategory.textile;
+      case 'furniture':
+        return ListingCategory.furniture;
+      case 'other':
+        return ListingCategory.other;
       default:
-        return ListingCategory.reusable;
+        return ListingCategory.other;
     }
   }
 

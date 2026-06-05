@@ -36,6 +36,9 @@ class PickupRequest extends Equatable {
   final String? qrToken;
   final double? rating;
   final String? feedback;
+  final double? pricePerKg;
+  final double? totalPrice;
+  final double? collectorEarning;
 
   const PickupRequest({
     required this.id,
@@ -69,6 +72,9 @@ class PickupRequest extends Equatable {
     this.qrToken,
     this.rating,
     this.feedback,
+    this.pricePerKg,
+    this.totalPrice,
+    this.collectorEarning,
   });
 
   PickupRequest copyWith({
@@ -103,6 +109,9 @@ class PickupRequest extends Equatable {
     String? qrToken,
     double? rating,
     String? feedback,
+    double? pricePerKg,
+    double? totalPrice,
+    double? collectorEarning,
   }) {
     return PickupRequest(
       id: id ?? this.id,
@@ -136,6 +145,9 @@ class PickupRequest extends Equatable {
       qrToken: qrToken ?? this.qrToken,
       rating: rating ?? this.rating,
       feedback: feedback ?? this.feedback,
+      pricePerKg: pricePerKg ?? this.pricePerKg,
+      totalPrice: totalPrice ?? this.totalPrice,
+      collectorEarning: collectorEarning ?? this.collectorEarning,
     );
   }
 
@@ -172,5 +184,8 @@ class PickupRequest extends Equatable {
         qrToken,
         rating,
         feedback,
+        pricePerKg,
+        totalPrice,
+        collectorEarning,
       ];
 }

@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const { body, validationResult } = require('express-validator');
 const { Conversation, Message, User, Listing } = require('../models');
 const { authenticate } = require('../middleware/auth');
+const { antiSpam } = require('../middleware/antiSpam');
 
 const router = express.Router();
 
@@ -178,6 +179,7 @@ router.get('/:id/messages', authenticate, async (req, res) => {
 router.post(
   '/:id/messages',
   authenticate,
+  antiSpam('send_message'),
   [body('content').trim().notEmpty().withMessage('content is required')],
   async (req, res) => {
     const errors = validationResult(req);

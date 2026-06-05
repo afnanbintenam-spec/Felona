@@ -116,30 +116,33 @@ enum WasteCategory {
 
 /// Listing category for marketplace items.
 enum ListingCategory {
-  furniture,
+  plastic,
+  metal,
+  paper,
+  glass,
   electronics,
-  books,
-  appliances,
-  office,
-  reusable,
-  scrap;
+  textile,
+  furniture,
+  other;
 
   String get displayName {
     switch (this) {
-      case ListingCategory.furniture:
-        return 'Furniture';
+      case ListingCategory.plastic:
+        return 'Plastic';
+      case ListingCategory.metal:
+        return 'Metal';
+      case ListingCategory.paper:
+        return 'Paper';
+      case ListingCategory.glass:
+        return 'Glass';
       case ListingCategory.electronics:
         return 'Electronics';
-      case ListingCategory.books:
-        return 'Books';
-      case ListingCategory.appliances:
-        return 'Appliances';
-      case ListingCategory.office:
-        return 'Office Items';
-      case ListingCategory.reusable:
-        return 'Reusable Products';
-      case ListingCategory.scrap:
-        return 'Scrap Materials';
+      case ListingCategory.textile:
+        return 'Textile';
+      case ListingCategory.furniture:
+        return 'Furniture';
+      case ListingCategory.other:
+        return 'Other';
     }
   }
 }
@@ -445,6 +448,60 @@ enum MessageStatus {
         return 'Delivered';
       case MessageStatus.read:
         return 'Read';
+    }
+  }
+}
+
+/// Order status for marketplace purchases (COD delivery flow).
+enum OrderStatus {
+  pending,
+  accepted,
+  pickedUp,
+  inTransit,
+  delivered,
+  completed,
+  cancelled,
+  rejected;
+
+  String get displayName {
+    switch (this) {
+      case OrderStatus.pending:
+        return 'Pending';
+      case OrderStatus.accepted:
+        return 'Accepted';
+      case OrderStatus.pickedUp:
+        return 'Picked Up';
+      case OrderStatus.inTransit:
+        return 'In Transit';
+      case OrderStatus.delivered:
+        return 'Delivered';
+      case OrderStatus.completed:
+        return 'Completed';
+      case OrderStatus.cancelled:
+        return 'Cancelled';
+      case OrderStatus.rejected:
+        return 'Rejected';
+    }
+  }
+
+  String get colorHex {
+    switch (this) {
+      case OrderStatus.pending:
+        return '#F39C12';
+      case OrderStatus.accepted:
+        return '#03A9F4';
+      case OrderStatus.pickedUp:
+        return '#9B59B6';
+      case OrderStatus.inTransit:
+        return '#3498DB';
+      case OrderStatus.delivered:
+        return '#2ECC71';
+      case OrderStatus.completed:
+        return '#27AE60';
+      case OrderStatus.cancelled:
+        return '#E74C3C';
+      case OrderStatus.rejected:
+        return '#E74C3C';
     }
   }
 }

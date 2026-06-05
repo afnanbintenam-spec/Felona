@@ -6,6 +6,8 @@ import 'package:felo_na/core/widgets/chips/category_chip.dart';
 import 'package:felo_na/core/widgets/inputs/search_bar.dart';
 import 'package:felo_na/core/widgets/loading/loading_indicator.dart';
 import 'package:felo_na/core/widgets/empty_states/empty_state.dart';
+import 'package:felo_na/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_bloc.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_event.dart';
 import 'package:felo_na/features/marketplace/presentation/bloc/marketplace_state.dart';
@@ -152,15 +154,22 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     );
                   } else if (state is MarketplaceLoaded) {
                     if (state.listings.isEmpty) {
+                      final authState = context.read<AuthBloc>().state;
+                      final isBuyer = authState is Authenticated &&
+                          authState.user.role == UserRole.buyer;
                       return EmptyState(
-                        icon: Icons.inventory_2_outlined,
-                        title: 'No Items Found',
-                        description:
-                            'There are no listings available at the moment.',
-                        actionLabel: 'Create Listing',
-                        onAction: () {
-                          Navigator.pushNamed(context, '/create-listing');
-                        },
+                        icon: Icons.storefront_outlined,
+                        title: 'Nothing Here Yet',
+                        description: isBuyer
+                            ? 'No items available for purchase yet.\nCheck back soon!'
+                            : 'No one has posted anything for sale yet.\nBe the first to list an item!',
+                        actionLabel: isBuyer ? null : 'Post an Item',
+                        onAction: isBuyer
+                            ? null
+                            : () {
+                                Navigator.pushNamed(
+                                    context, '/create-listing');
+                              },
                       );
                     }
 
@@ -193,10 +202,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                   }
 
                   return const EmptyState(
-                    icon: Icons.inventory_2_outlined,
+                    icon: Icons.storefront_outlined,
                     title: 'Marketplace',
                     description:
-                        'Browse items or create your own listing',
+                        'Items posted by sellers will appear here.\nBrowse or list your own items!',
                   );
                 },
               ),
@@ -204,17 +213,26 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, '/create-listing'),
-        backgroundColor: AppColors.primaryGreen,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'List something',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w600,
-          ),
+      floatingActionButton: _buildFab(),
+    );
+  }
+
+  Widget? _buildFab() {
+    final authState = context.read<AuthBloc>().state;
+    final isBuyer =
+        authState is Authenticated && authState.user.role == UserRole.buyer;
+    if (isBuyer) return null;
+
+    return FloatingActionButton.extended(
+      onPressed: () => Navigator.pushNamed(context, '/create-listing'),
+      backgroundColor: AppColors.primaryGreen,
+      icon: const Icon(Icons.add, color: Colors.white),
+      label: const Text(
+        'List something',
+        style: TextStyle(
+          color: Colors.white,
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

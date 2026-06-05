@@ -28,20 +28,22 @@ class ItemCard extends StatelessWidget {
   String _placeholderImageUrl(ListingCategory category) {
     // Curated Unsplash photos per category (w=400 for performance)
     switch (category) {
-      case ListingCategory.furniture:
-        return 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&fit=crop';
+      case ListingCategory.plastic:
+        return 'https://images.unsplash.com/photo-1604187351574-c75ca79f5807?w=400&fit=crop';
+      case ListingCategory.metal:
+        return 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&fit=crop';
+      case ListingCategory.paper:
+        return 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&fit=crop';
+      case ListingCategory.glass:
+        return 'https://images.unsplash.com/photo-1542601906897-ecd4d0a2b228?w=400&fit=crop';
       case ListingCategory.electronics:
         return 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&fit=crop';
-      case ListingCategory.books:
-        return 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&fit=crop';
-      case ListingCategory.appliances:
+      case ListingCategory.textile:
+        return 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400&fit=crop';
+      case ListingCategory.furniture:
+        return 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&fit=crop';
+      case ListingCategory.other:
         return 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&fit=crop';
-      case ListingCategory.office:
-        return 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&fit=crop';
-      case ListingCategory.reusable:
-        return 'https://images.unsplash.com/photo-1542601906897-ecd4d0a2b228?w=400&fit=crop';
-      case ListingCategory.scrap:
-        return 'https://images.unsplash.com/photo-1604187351574-c75ca79f5807?w=400&fit=crop';
     }
   }
 

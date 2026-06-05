@@ -4,8 +4,33 @@ const { body, validationResult } = require('express-validator');
 const { Op } = require('sequelize');
 const { Pickup, User, EcoActivity, Notification } = require('../models');
 const { authenticate, authorize } = require('../middleware/auth');
+const { antiSpam } = require('../middleware/antiSpam');
 
 const router = express.Router();
+
+// ─── Pickup Pricing Table (BDT per kg) ──────────────────────
+const PICKUP_PRICING = {
+  plastic: 20,
+  metal: 50,
+  paper: 12,
+  glass: 8,
+  electronics: 40,
+  organic: 5,
+  mixed: 10,
+  other: 10,
+};
+
+// Collector earns 70% of the pickup value
+const COLLECTOR_COMMISSION_RATE = 0.7;
+
+function getPickupPrice(category, weight) {
+  const ratePerKg = PICKUP_PRICING[category] || 10;
+  return Math.round(ratePerKg * weight);
+}
+
+function getCollectorEarning(totalPrice) {
+  return Math.round(totalPrice * COLLECTOR_COMMISSION_RATE);
+}
 
 // ─── Helper: Create notification ─────────────────────────────
 async function createNotification(userId, type, title, message, data = {}) {
@@ -19,12 +44,17 @@ async function createNotification(userId, type, title, message, data = {}) {
 // ─── Helper: Format pickup response ─────────────────────────
 function formatPickup(pickup) {
   const p = pickup.toJSON ? pickup.toJSON() : pickup;
+  const estimatedWeight = parseFloat(p.estimated_weight);
+  const category = p.waste_category;
+  const totalPrice = getPickupPrice(category, estimatedWeight);
+  const collectorEarning = getCollectorEarning(totalPrice);
+
   return {
     id: p.id,
     user_id: p.user_id,
     user_name: p.requester?.full_name || '',
     category: p.waste_category,
-    estimated_weight: parseFloat(p.estimated_weight),
+    estimated_weight: estimatedWeight,
     address: p.address,
     latitude: p.latitude ? parseFloat(p.latitude) : null,
     longitude: p.longitude ? parseFloat(p.longitude) : null,
@@ -50,9 +80,47 @@ function formatPickup(pickup) {
     accepted_at: p.accepted_at,
     completed_at: p.completed_at,
     eco_points_earned: p.eco_points_earned,
+    // Pricing
+    price_per_kg: PICKUP_PRICING[category] || 10,
+    total_price: totalPrice,
+    collector_earning: collectorEarning,
     created_at: p.created_at || p.createdAt,
   };
 }
+
+// ─── GET /pickups/pricing — get pricing table ───────────────
+router.get('/pricing', (req, res) => {
+  res.json({
+    pricing: PICKUP_PRICING,
+    collector_commission_rate: COLLECTOR_COMMISSION_RATE,
+    currency: 'BDT',
+    note: 'Price per kg. Collector earns 70% of total pickup value.',
+  });
+});
+
+// ─── GET /pickups/estimate — estimate price for a pickup ─────
+router.get('/estimate', (req, res) => {
+  const { category, weight } = req.query;
+  if (!category || !weight) {
+    return res.status(400).json({ error: 'category and weight are required' });
+  }
+  const w = parseFloat(weight);
+  if (isNaN(w) || w <= 0) {
+    return res.status(400).json({ error: 'weight must be a positive number' });
+  }
+  const ratePerKg = PICKUP_PRICING[category] || 10;
+  const totalPrice = Math.round(ratePerKg * w);
+  const collectorEarning = Math.round(totalPrice * COLLECTOR_COMMISSION_RATE);
+
+  res.json({
+    category,
+    weight: w,
+    rate_per_kg: ratePerKg,
+    total_price: totalPrice,
+    collector_earning: collectorEarning,
+    currency: 'BDT',
+  });
+});
 
 // ─── GET /pickups — user's pickups ───────────────────────────
 router.get('/', authenticate, async (req, res) => {
@@ -243,7 +311,7 @@ router.get('/:id/tracking', authenticate, async (req, res) => {
 });
 
 // ─── POST /pickups — create pickup with scheduling ───────────
-router.post('/', authenticate, [
+router.post('/', authenticate, antiSpam('create_pickup'), [
   body('category').isIn(['plastic', 'metal', 'paper', 'glass', 'electronics', 'organic', 'mixed', 'other']),
   body('estimated_weight').isFloat({ min: 0.1 }),
   body('address').trim().isLength({ min: 10 }),

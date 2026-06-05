@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:felo_na/core/constants/app_colors.dart';
 import 'package:felo_na/core/constants/app_text_styles.dart';
 import 'package:felo_na/core/constants/enums.dart';
@@ -15,8 +17,11 @@ import 'package:felo_na/features/pickup/presentation/bloc/pickup_state.dart';
 ///
 /// Features:
 /// - Waste category selection
+/// - Photo upload (required)
 /// - Weight estimation
 /// - Address input with location
+/// - Phone number for contact
+/// - Time slot selection
 /// - Additional notes
 /// - BLoC integration
 class CreatePickupScreen extends StatefulWidget {
@@ -31,8 +36,12 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
   final _weightController = TextEditingController();
   final _addressController = TextEditingController();
   final _notesController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _imagePicker = ImagePicker();
+  final List<XFile> _selectedPhotos = [];
   
   WasteCategory? _selectedCategory;
+  PickupTimeSlot? _selectedTimeSlot;
   double? _pickedLatitude;
   double? _pickedLongitude;
   bool _locating = false;
@@ -42,6 +51,7 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
     _weightController.dispose();
     _addressController.dispose();
     _notesController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -62,6 +72,17 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
     }
     if (value.length < 10) {
       return 'Please enter a complete address';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Phone number is required so the collector can contact you';
+    }
+    final phoneRegex = RegExp(r'^\+?[\d\s-]{7,15}$');
+    if (!phoneRegex.hasMatch(value)) {
+      return 'Please enter a valid phone number';
     }
     return null;
   }
@@ -183,6 +204,31 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
       return;
     }
 
+    if (_selectedPhotos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please add at least one photo of the waste'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedTimeSlot == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a preferred time slot'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    // Include phone number in notes for collector contact
+    final phone = _phoneController.text.trim();
+    final userNotes = _notesController.text.trim();
+    final notesWithPhone = 'Contact: $phone${userNotes.isNotEmpty ? '\n$userNotes' : ''}';
+
     // Submit pickup request
     context.read<PickupBloc>().add(
           CreatePickupRequested(
@@ -191,11 +237,61 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
             address: _addressController.text.trim(),
             latitude: _pickedLatitude,
             longitude: _pickedLongitude,
-            notes: _notesController.text.trim().isEmpty
-                ? null
-                : _notesController.text.trim(),
+            notes: notesWithPhone,
+            timeSlot: _selectedTimeSlot,
           ),
         );
+  }
+
+  Future<void> _pickPhotos() async {
+    try {
+      final images = await _imagePicker.pickMultiImage(
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+      );
+      if (images.isNotEmpty && mounted) {
+        setState(() {
+          _selectedPhotos.addAll(images.take(5 - _selectedPhotos.length));
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not pick images'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 80,
+      );
+      if (image != null && mounted) {
+        setState(() {
+          if (_selectedPhotos.length < 5) {
+            _selectedPhotos.add(image);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not take photo'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -296,6 +392,26 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
                     _buildCategoryGrid(isLoading),
                     const SizedBox(height: 24),
 
+                    // Photos (required)
+                    Text(
+                      'Photos of Waste *',
+                      style: AppTextStyles.headlineSmall.copyWith(
+                        color: AppColors.gray900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Add photos so the collector knows what to expect',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPhotoSection(isLoading),
+                    const SizedBox(height: 24),
+
                     // Estimated Weight
                     CustomTextField(
                       label: 'Estimated Weight (kg)',
@@ -335,6 +451,50 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
                           : 'Use Current Location'),
                     ),
                     const SizedBox(height: 16),
+
+                    // Phone Number (required for collector contact)
+                    CustomTextField(
+                      label: 'Your Phone Number',
+                      hintText: 'e.g. +880 1700 000000',
+                      controller: _phoneController,
+                      validator: _validatePhone,
+                      keyboardType: TextInputType.phone,
+                      enabled: !isLoading,
+                      prefixIcon: const Icon(Icons.phone),
+                    ),
+                    const SizedBox(height: 6),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4),
+                      child: Text(
+                        'The collector will use this number to contact you',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Time Slot Selection
+                    Text(
+                      'Preferred Time',
+                      style: AppTextStyles.headlineSmall.copyWith(
+                        color: AppColors.gray900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'When should the collector come?',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildTimeSlotGrid(isLoading),
+                    const SizedBox(height: 20),
 
                     // Additional Notes
                     CustomTextField(
@@ -438,5 +598,208 @@ class _CreatePickupScreenState extends State<CreatePickupScreen> {
       case WasteCategory.other:
         return Icons.inventory_2;
     }
+  }
+
+  Widget _buildPhotoSection(bool isLoading) {
+    return Column(
+      children: [
+        // Photo grid
+        if (_selectedPhotos.isNotEmpty)
+          SizedBox(
+            height: 100,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _selectedPhotos.length + (_selectedPhotos.length < 5 ? 1 : 0),
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                if (index == _selectedPhotos.length) {
+                  return _buildAddPhotoButton(isLoading);
+                }
+                return _buildPhotoThumbnail(index);
+              },
+            ),
+          )
+        else
+          // Empty state — add photos
+          GestureDetector(
+            onTap: isLoading ? null : _pickPhotos,
+            child: Container(
+              height: 120,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.border,
+                  width: 1,
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_a_photo_rounded,
+                    size: 32,
+                    color: AppColors.primaryGreen.withValues(alpha: 0.7),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Tap to add photos',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const Text(
+                    'Required — up to 5 photos',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPhotoThumbnail(int index) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: FutureBuilder<Uint8List>(
+            future: _selectedPhotos[index].readAsBytes(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return Image.memory(
+                  snapshot.data!,
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.cover,
+                );
+              }
+              return Container(
+                width: 100,
+                height: 100,
+                color: AppColors.surface,
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primaryGreen,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        Positioned(
+          top: 4,
+          right: 4,
+          child: GestureDetector(
+            onTap: () => setState(() => _selectedPhotos.removeAt(index)),
+            child: Container(
+              width: 22,
+              height: 22,
+              decoration: const BoxDecoration(
+                color: AppColors.error,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAddPhotoButton(bool isLoading) {
+    return GestureDetector(
+      onTap: isLoading ? null : _pickPhotos,
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_rounded, size: 24, color: AppColors.primaryGreen),
+            SizedBox(height: 4),
+            Text(
+              'Add',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 11,
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeSlotGrid(bool isLoading) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: PickupTimeSlot.values.map((slot) {
+        final isSelected = _selectedTimeSlot == slot;
+        return GestureDetector(
+          onTap: isLoading
+              ? null
+              : () => setState(() => _selectedTimeSlot = slot),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.primaryGreen.withValues(alpha: 0.12)
+                  : AppColors.card,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isSelected ? AppColors.primaryGreen : AppColors.border,
+                width: isSelected ? 2 : 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  slot.displayName,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected
+                        ? AppColors.primaryGreen
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  slot.label,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 10,
+                    color: isSelected
+                        ? AppColors.primaryGreen
+                        : AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
   }
 }

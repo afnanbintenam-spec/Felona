@@ -17,8 +17,8 @@ import 'package:felo_na/features/auth/presentation/bloc/auth_state.dart';
 /// Profile screen displaying user information and allowing edits.
 ///
 /// Features:
-/// - Displays user profile picture, name, email, role, phone number
-/// - Allows editing name and phone number
+/// - Displays user profile picture, name, email, role
+/// - Allows editing name
 /// - Image picker for profile picture upload (JPEG/PNG, max 5MB)
 /// - Wired to AuthBloc for state management
 /// - Logout functionality
@@ -34,7 +34,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _imagePicker = ImagePicker();
 
   bool _isEditing = false;
@@ -51,14 +50,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final state = context.read<AuthBloc>().state;
     if (state is Authenticated) {
       _fullNameController.text = state.user.fullName;
-      _phoneController.text = state.user.phoneNumber ?? '';
     }
   }
 
   @override
   void dispose() {
     _fullNameController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 
@@ -68,17 +65,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     if (value.length < 3) {
       return 'Name must be at least 3 characters';
-    }
-    return null;
-  }
-
-  String? _validatePhone(String? value) {
-    if (value == null || value.isEmpty) {
-      return null; // Phone is optional
-    }
-    final phoneRegex = RegExp(r'^\+?[\d\s-]{7,15}$');
-    if (!phoneRegex.hasMatch(value)) {
-      return 'Please enter a valid phone number';
     }
     return null;
   }
@@ -151,9 +137,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context.read<AuthBloc>().add(
             UpdateProfileRequested(
               fullName: _fullNameController.text.trim(),
-              phoneNumber: _phoneController.text.trim().isEmpty
-                  ? null
-                  : _phoneController.text.trim(),
             ),
           );
       setState(() {
@@ -493,12 +476,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           label: 'Email',
           value: user.email,
         ),
-        const SizedBox(height: 12),
-        _buildInfoCard(
-          icon: Icons.phone_outlined,
-          label: 'Phone',
-          value: user.phoneNumber ?? 'Not set',
-        ),
+
         const SizedBox(height: 12),
         _buildInfoCard(
           icon: Icons.eco_outlined,
@@ -584,17 +562,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           enabled: false,
           prefixIcon: const Icon(Icons.email_outlined),
         ),
-        const SizedBox(height: 16),
 
-        // Phone Number (editable)
-        CustomTextField(
-          label: 'Phone Number',
-          hintText: 'Enter your phone number',
-          controller: _phoneController,
-          validator: _validatePhone,
-          keyboardType: TextInputType.phone,
-          prefixIcon: const Icon(Icons.phone_outlined),
-        ),
         const SizedBox(height: 16),
 
         // Role (read-only)

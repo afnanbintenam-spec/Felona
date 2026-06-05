@@ -35,6 +35,9 @@ class PickupModel extends PickupRequest {
     super.qrToken,
     super.rating,
     super.feedback,
+    super.pricePerKg,
+    super.totalPrice,
+    super.collectorEarning,
   });
 
   factory PickupModel.fromJson(Map<String, dynamic> json) {
@@ -82,6 +85,9 @@ class PickupModel extends PickupRequest {
       qrToken: (json['qr_token'] ?? json['qrToken']) as String?,
       rating: (json['rating'] as num?)?.toDouble(),
       feedback: json['feedback'] as String?,
+      pricePerKg: ((json['price_per_kg'] ?? json['pricePerKg']) as num?)?.toDouble(),
+      totalPrice: ((json['total_price'] ?? json['totalPrice']) as num?)?.toDouble(),
+      collectorEarning: ((json['collector_earning'] ?? json['collectorEarning']) as num?)?.toDouble(),
     );
   }
 

@@ -63,3 +63,13 @@ class SellerListingsLoaded extends MarketplaceState {
   @override
   List<Object?> get props => [listings];
 }
+
+/// Offer submitted successfully.
+class OfferMade extends MarketplaceState {
+  const OfferMade();
+}
+
+/// Submitting an offer.
+class MakingOffer extends MarketplaceState {
+  const MakingOffer();
+}

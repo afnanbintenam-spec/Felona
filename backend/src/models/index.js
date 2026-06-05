@@ -3,6 +3,7 @@ const User = require('./User');
 const Listing = require('./Listing');
 const Pickup = require('./Pickup');
 const Offer = require('./Offer');
+const Order = require('./Order');
 const EcoActivity = require('./EcoActivity');
 const Otp = require('./Otp');
 const WasteScan = require('./WasteScan');
@@ -65,12 +66,34 @@ Message.belongsTo(Conversation, { foreignKey: 'conversation_id', as: 'conversati
 User.hasMany(Message, { foreignKey: 'sender_id', as: 'sent_messages' });
 Message.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
 
+// ─── Order Associations ───────────────────────────────────────
+
+// Order belongs to Listing
+Listing.hasMany(Order, { foreignKey: 'listing_id', as: 'orders' });
+Order.belongsTo(Listing, { foreignKey: 'listing_id', as: 'listing' });
+
+// Order belongs to Offer
+Offer.hasOne(Order, { foreignKey: 'offer_id', as: 'order' });
+Order.belongsTo(Offer, { foreignKey: 'offer_id', as: 'offer' });
+
+// Order belongs to Buyer
+User.hasMany(Order, { foreignKey: 'buyer_id', as: 'purchases' });
+Order.belongsTo(User, { foreignKey: 'buyer_id', as: 'buyer' });
+
+// Order belongs to Seller
+User.hasMany(Order, { foreignKey: 'seller_id', as: 'sales' });
+Order.belongsTo(User, { foreignKey: 'seller_id', as: 'seller' });
+
+// Order optionally belongs to Collector (delivery rider)
+Order.belongsTo(User, { foreignKey: 'collector_id', as: 'collector' });
+
 module.exports = {
   sequelize,
   User,
   Listing,
   Pickup,
   Offer,
+  Order,
   EcoActivity,
   Otp,
   WasteScan,

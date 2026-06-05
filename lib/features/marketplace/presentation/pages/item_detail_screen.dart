@@ -76,16 +76,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     });
   }
 
-  void _makeOffer() {
-    if (_listing == null) return;
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildOfferBottomSheet(),
-    );
-  }
-
   void _messageSeller() {
     if (_listing == null) return;
     // Open or create a conversation with the seller about this listing
@@ -465,14 +455,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: AppColors.card,
+        border: Border(
+          top: BorderSide(color: AppColors.border, width: 1),
+        ),
       ),
       child: SafeArea(
         child: Row(
@@ -487,9 +473,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: PrimaryButton(
-                text: 'Make Offer',
-                onPressed: _makeOffer,
-                icon: Icons.local_offer_outlined,
+                text: 'Purchase',
+                onPressed: _showPurchaseSheet,
+                icon: Icons.shopping_bag_outlined,
               ),
             ),
           ],
@@ -498,79 +484,203 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  Widget _buildOfferBottomSheet() {
-    final offerController = TextEditingController();
+  void _showPurchaseSheet() {
+    if (_listing == null) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildPurchaseBottomSheet(),
+    );
+  }
 
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.gray300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Title
-            Text(
-              'Make an Offer',
-              style: AppTextStyles.headlineMedium.copyWith(
-                color: AppColors.gray900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Listed price: ৳${_listing?.price.toStringAsFixed(0) ?? '0'}',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.gray600,
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Offer input
-            TextField(
-              controller: offerController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Your Offer',
-                hintText: 'Enter amount',
-                prefixText: '৳ ',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Submit button
-            PrimaryButton(
-              text: 'Submit Offer',
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Offer submitted successfully!'),
-                    backgroundColor: AppColors.success,
+  Widget _buildPurchaseBottomSheet() {
+    final addressController = TextEditingController();
+    final phoneController = TextEditingController();
+
+    return StatefulBuilder(
+      builder: (context, setSheetState) {
+        return Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                );
-              },
+                ),
+                const SizedBox(height: 24),
+                // Title
+                const Text(
+                  'Purchase Item',
+                  style: TextStyle(
+                    fontFamily: 'Finlandica',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${_listing?.title ?? ''} — ৳${_listing?.price.toStringAsFixed(0) ?? '0'}',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'A pickup rider will deliver this item to your address.',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Delivery Address
+                TextField(
+                  controller: addressController,
+                  maxLines: 2,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Delivery Address',
+                    labelStyle: const TextStyle(color: AppColors.textTertiary),
+                    hintText: 'Enter your full delivery address',
+                    hintStyle: const TextStyle(color: AppColors.textMuted),
+                    prefixIcon: const Icon(Icons.location_on_outlined,
+                        color: AppColors.primaryGreen),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                          color: AppColors.primaryGreen, width: 1.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                // Phone
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    color: AppColors.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Your Phone Number',
+                    labelStyle: const TextStyle(color: AppColors.textTertiary),
+                    hintText: 'e.g. +880 1700 000000',
+                    hintStyle: const TextStyle(color: AppColors.textMuted),
+                    prefixIcon: const Icon(Icons.phone_outlined,
+                        color: AppColors.primaryGreen),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                          color: AppColors.primaryGreen, width: 1.5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Submit button
+                PrimaryButton(
+                  text: 'Confirm Purchase',
+                  icon: Icons.check_rounded,
+                  onPressed: () {
+                    if (addressController.text.trim().length < 10) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter a complete delivery address'),
+                          backgroundColor: AppColors.warning,
+                        ),
+                      );
+                      return;
+                    }
+                    if (phoneController.text.trim().length < 7) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please enter a valid phone number'),
+                          backgroundColor: AppColors.warning,
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.pop(context);
+                    _submitPurchase(
+                      addressController.text.trim(),
+                      phoneController.text.trim(),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _submitPurchase(String address, String phone) {
+    if (_listing == null) return;
+    // Submit offer at listed price with delivery info in message
+    final offerMessage = 'DELIVERY_ADDRESS:$address|PHONE:$phone';
+
+    // Use the existing offer API
+    context.read<MarketplaceBloc>().add(
+          MakeOfferRequested(
+            listingId: _listing!.id,
+            amount: _listing!.price,
+            message: offerMessage,
+          ),
+        );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            'Purchase request sent! The seller will confirm and a rider will deliver to you.'),
+        backgroundColor: AppColors.success,
+        duration: Duration(seconds: 4),
       ),
     );
   }

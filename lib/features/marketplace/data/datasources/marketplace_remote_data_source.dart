@@ -26,6 +26,11 @@ abstract class MarketplaceRemoteDataSource {
   Future<Map<String, dynamic>> acceptOffer(String offerId);
   Future<Map<String, dynamic>> rejectOffer(String offerId);
   Future<List<ListingModel>> getSellerListings(String sellerId);
+  Future<void> makeOffer({
+    required String listingId,
+    required double amount,
+    String? message,
+  });
 }
 
 class MarketplaceRemoteDataSourceImpl implements MarketplaceRemoteDataSource {
@@ -221,6 +226,25 @@ class MarketplaceRemoteDataSourceImpl implements MarketplaceRemoteDataSource {
           .map((json) => ListingModel.fromJson(json as Map<String, dynamic>))
           .toList();
       return listings;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
+  @override
+  Future<void> makeOffer({
+    required String listingId,
+    required double amount,
+    String? message,
+  }) async {
+    try {
+      await _apiClient.post(
+        '$_listingsPath/$listingId/offer',
+        data: {
+          'amount': amount,
+          if (message != null) 'message': message,
+        },
+      );
     } on DioException catch (e) {
       throw _handleDioError(e);
     }

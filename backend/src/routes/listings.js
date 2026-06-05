@@ -1,7 +1,8 @@
 const express = require('express');
 const { body, query, validationResult } = require('express-validator');
-const { Listing, User, Offer } = require('../models');
+const { Listing, User, Offer, EcoActivity } = require('../models');
 const { authenticate } = require('../middleware/auth');
+const { antiSpam } = require('../middleware/antiSpam');
 const upload = require('../middleware/upload');
 
 const router = express.Router();
@@ -141,7 +142,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /listings — create new listing
-router.post('/', authenticate, upload.array('images', 5), [
+router.post('/', authenticate, antiSpam('create_listing'), upload.array('images', 5), [
   body('title').trim().isLength({ min: 3, max: 200 }),
   body('description').trim().isLength({ min: 10 }),
   body('price').isFloat({ min: 0 }),
@@ -216,7 +217,7 @@ router.post('/:id/favorite', authenticate, async (req, res) => {
 });
 
 // POST /listings/:id/offer — buyer makes an offer
-router.post('/:id/offer', authenticate, [
+router.post('/:id/offer', authenticate, antiSpam('make_offer'), [
   body('amount').isFloat({ min: 0 }),
   body('message').optional().trim().isLength({ max: 500 }),
 ], async (req, res) => {
@@ -277,6 +278,8 @@ router.get('/offers/my', authenticate, async (req, res) => {
 // PATCH /listings/offers/:offerId — seller accepts or rejects an offer
 router.patch('/offers/:offerId', authenticate, [
   body('status').isIn(['accepted', 'rejected']),
+  body('delivery_address').optional().trim(),
+  body('delivery_phone').optional().trim(),
 ], async (req, res) => {
   try {
     const offer = await Offer.findByPk(req.params.offerId, {
@@ -289,14 +292,32 @@ router.patch('/offers/:offerId', authenticate, [
 
     await offer.update({ status: req.body.status });
 
-    // If accepted, mark listing as reserved
+    // If accepted, create an Order and mark listing as reserved
     if (req.body.status === 'accepted') {
       await offer.listing.update({ status: 'reserved' });
+
       // Reject all other pending offers
       await Offer.update(
         { status: 'rejected' },
         { where: { listing_id: offer.listing_id, status: 'pending', id: { [require('sequelize').Op.ne]: offer.id } } }
       );
+
+      // Create an Order (COD)
+      const { Order } = require('../models');
+      const order = await Order.create({
+        listing_id: offer.listing_id,
+        offer_id: offer.id,
+        buyer_id: offer.buyer_id,
+        seller_id: req.userId,
+        amount: offer.amount,
+        payment_method: 'cod',
+        status: 'pending',
+        delivery_address: req.body.delivery_address || offer.message || 'Address pending',
+        delivery_phone: req.body.delivery_phone || '',
+      });
+
+      res.json({ offer, order });
+      return;
     }
 
     res.json({ offer });

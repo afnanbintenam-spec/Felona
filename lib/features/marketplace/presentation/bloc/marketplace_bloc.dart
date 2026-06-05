@@ -21,6 +21,7 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
     on<CreateListingRequested>(_onCreateListingRequested);
     on<LoadMyListingsRequested>(_onLoadMyListingsRequested);
     on<LoadSellerListingsRequested>(_onLoadSellerListingsRequested);
+    on<MakeOfferRequested>(_onMakeOfferRequested);
   }
 
   Future<void> _onLoadListingsRequested(
@@ -140,6 +141,24 @@ class MarketplaceBloc extends Bloc<MarketplaceEvent, MarketplaceState> {
     result.fold(
       (failure) => emit(MarketplaceError(message: failure.message)),
       (listings) => emit(SellerListingsLoaded(listings: listings)),
+    );
+  }
+
+  Future<void> _onMakeOfferRequested(
+    MakeOfferRequested event,
+    Emitter<MarketplaceState> emit,
+  ) async {
+    emit(const MakingOffer());
+
+    final result = await _repository.makeOffer(
+      listingId: event.listingId,
+      amount: event.amount,
+      message: event.message,
+    );
+
+    result.fold(
+      (failure) => emit(MarketplaceError(message: failure.message)),
+      (_) => emit(const OfferMade()),
     );
   }
 }

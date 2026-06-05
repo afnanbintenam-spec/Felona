@@ -79,3 +79,19 @@ class LoadSellerListingsRequested extends MarketplaceEvent {
   @override
   List<Object?> get props => [sellerId];
 }
+
+/// Event to make a purchase offer on a listing.
+class MakeOfferRequested extends MarketplaceEvent {
+  final String listingId;
+  final double amount;
+  final String? message;
+
+  const MakeOfferRequested({
+    required this.listingId,
+    required this.amount,
+    this.message,
+  });
+
+  @override
+  List<Object?> get props => [listingId, amount, message];
+}

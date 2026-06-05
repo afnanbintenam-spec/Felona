@@ -116,4 +116,22 @@ class MarketplaceRepositoryImpl implements MarketplaceRepository {
       return Left(ErrorHandler.handleException(e));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> makeOffer({
+    required String listingId,
+    required double amount,
+    String? message,
+  }) async {
+    try {
+      await _remoteDataSource.makeOffer(
+        listingId: listingId,
+        amount: amount,
+        message: message,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(ErrorHandler.handleException(e));
+    }
+  }
 }

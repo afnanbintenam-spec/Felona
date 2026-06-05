@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const { Op } = require('sequelize');
-const { User, EcoActivity, Otp } = require('../models');
+const { User, Otp } = require('../models');
 const { authenticate } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { sendOtpEmail } = require('../services/emailService');
@@ -165,15 +165,6 @@ router.post('/verify-email', [
     // Mark OTP used + verify user
     await otp.update({ is_used: true });
     await user.update({ is_email_verified: true });
-
-    // Award signup bonus now that email is verified
-    await EcoActivity.create({
-      user_id: user.id,
-      type: 'signup_bonus',
-      points: 50,
-      description: 'Welcome to FeloNa! 🌱',
-    });
-    await user.increment('eco_points', { by: 50 });
     await user.reload();
 
     // Issue auth tokens
